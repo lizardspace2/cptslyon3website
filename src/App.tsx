@@ -8,7 +8,9 @@ import Presentation from "./pages/Presentation";
 import Actualites from "./pages/Actualites";
 import Annuaire from "./pages/Annuaire";
 import Contact from "./pages/Contact";
-import GenericPage from "./pages/GenericPage";
+import Ressources from "./pages/Ressources";
+import Remplacement from "./pages/Remplacement";
+import EspaceAdherent from "./pages/EspaceAdherent";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,9 +27,9 @@ const App = () => (
           <Route path="/actualites" element={<Actualites />} />
           <Route path="/annuaire" element={<Annuaire />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/ressources" element={<GenericPage title="Ressources" />} />
-          <Route path="/remplacement" element={<GenericPage title="Remplacement" />} />
-          <Route path="/espace-adherent" element={<GenericPage title="Espace adhérent" />} />
+          <Route path="/ressources" element={<Ressources />} />
+          <Route path="/remplacement" element={<Remplacement />} />
+          <Route path="/espace-adherent" element={<EspaceAdherent />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
