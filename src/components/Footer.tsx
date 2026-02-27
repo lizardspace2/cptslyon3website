@@ -8,10 +8,10 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
             <div className="mb-4">
-              <span className="text-2xl font-display font-bold">CPTS Lyon 5</span>
+              <span className="text-2xl font-display font-bold">CPTS Lyon 3</span>
             </div>
             <p className="text-navy-foreground/70 text-sm leading-relaxed">
-              Communauté Professionnelle Territoriale de Santé du 5ème arrondissement de Lyon.
+              Communauté Professionnelle Territoriale de Santé du 3ème arrondissement de Lyon.
             </p>
           </div>
 
@@ -39,8 +39,8 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start gap-2 text-sm text-navy-foreground/70">
                 <Mail className="w-4 h-4 mt-0.5 shrink-0" />
-                <a href="mailto:cptslyon5@gmail.com" className="hover:text-navy-foreground transition-colors">
-                  cptslyon5@gmail.com
+                <a href="mailto:cptslyon3@gmail.com" className="hover:text-navy-foreground transition-colors">
+                  cptslyon3@gmail.com
                 </a>
               </li>
               <li className="flex items-start gap-2 text-sm text-navy-foreground/70">
@@ -72,7 +72,7 @@ const Footer = () => {
         </div>
 
         <div className="mt-12 pt-8 border-t border-navy-foreground/10 text-center text-sm text-navy-foreground/50">
-          © {new Date().getFullYear()} CPTS Lyon 5. Tous droits réservés.
+          © {new Date().getFullYear()} CPTS Lyon 3. Tous droits réservés.
         </div>
       </div>
     </footer>

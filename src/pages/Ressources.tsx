@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const documents = [
-  { title: "Guide d'installation en libéral", description: "Toutes les étapes pour s'installer sur le 5ème arrondissement.", icon: ClipboardList, category: "guides" },
+  { title: "Guide d'installation en libéral", description: "Toutes les étapes pour s'installer sur le 3ème arrondissement.", icon: ClipboardList, category: "guides" },
   { title: "Protocoles de coordination", description: "Protocoles pluriprofessionnels validés par la CPTS.", icon: FileText, category: "protocoles" },
   { title: "Annuaire des structures de soin", description: "Liste complète des structures sanitaires et médico-sociales.", icon: BookOpen, category: "guides" },
-  { title: "Charte de la CPTS Lyon 5", description: "Charte d'engagement des professionnels adhérents.", icon: FileText, category: "protocoles" },
+  { title: "Charte de la CPTS Lyon 3", description: "Charte d'engagement des professionnels adhérents.", icon: FileText, category: "protocoles" },
   { title: "Fiche parcours patient complexe", description: "Outil de coordination pour les situations complexes.", icon: ClipboardList, category: "outils" },
   { title: "Kit de communication", description: "Supports de communication pour informer vos patients.", icon: FileText, category: "outils" },
 ];

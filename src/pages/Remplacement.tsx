@@ -16,7 +16,7 @@ const annonces = [
   {
     type: "Recherche remplaçant",
     profession: "Médecin généraliste",
-    lieu: "Lyon 5 – Point du Jour",
+    lieu: "Lyon 3 – Point du Jour",
     periode: "Du 10 au 21 mars 2025",
     description: "Cabinet de groupe, 3 médecins. Patientèle variée. Logiciel Doctolib. Rétrocession 80%.",
     urgent: true,
@@ -25,7 +25,7 @@ const annonces = [
   {
     type: "Recherche remplaçant",
     profession: "Infirmier(ère)",
-    lieu: "Lyon 5 – Saint-Just",
+    lieu: "Lyon 3 – Saint-Just",
     periode: "Tous les lundis à partir d'avril 2025",
     description: "Cabinet libéral, tournée mixte (domicile + cabinet). Véhicule nécessaire.",
     urgent: false,
@@ -34,7 +34,7 @@ const annonces = [
   {
     type: "Disponible pour remplacement",
     profession: "Kinésithérapeute",
-    lieu: "Lyon 5 et alentours",
+    lieu: "Lyon 3 et alentours",
     periode: "Disponible de suite",
     description: "5 ans d'expérience. Spécialisé en rééducation post-opératoire et sport.",
     urgent: false,
@@ -43,7 +43,7 @@ const annonces = [
   {
     type: "Recherche remplaçant",
     profession: "Médecin généraliste",
-    lieu: "Lyon 5 – Vieux Lyon",
+    lieu: "Lyon 3 – Vieux Lyon",
     periode: "Été 2025 (juillet-août)",
     description: "Cabinet individuel. Patientèle fidèle. Cadre agréable en centre historique.",
     urgent: false,
@@ -80,7 +80,7 @@ const Remplacement = () => {
               transition={{ delay: 0.1 }}
               className="mt-4 text-lg text-navy-foreground/80 max-w-2xl mx-auto"
             >
-              Trouvez un remplaçant ou proposez vos disponibilités sur le territoire de Lyon 5.
+              Trouvez un remplaçant ou proposez vos disponibilités sur le territoire de Lyon 3.
             </motion.p>
           </div>
         </section>

@@ -17,7 +17,7 @@ const TerritorySection = () => {
           >
             <img
               src={carteImage}
-              alt="Carte du territoire Lyon 5"
+              alt="Carte du territoire Lyon 3"
               className="rounded-2xl shadow-card w-full"
             />
           </motion.div>
@@ -29,10 +29,10 @@ const TerritorySection = () => {
             className="order-1 lg:order-2"
           >
             <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-6">
-              Le territoire de la CPTS Lyon 5
+              Le territoire de la CPTS Lyon 3
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed mb-8">
-              Le 5ème arrondissement de Lyon regroupe une population d'environ 48 000 habitants répartis sur plusieurs quartiers emblématiques : le Vieux Lyon, Fourvière, Saint‑Just, Point‑du‑Jour, Ménival, Champvert.
+              Le 3ème arrondissement de Lyon regroupe une population d'environ 48 000 habitants répartis sur plusieurs quartiers emblématiques : le Vieux Lyon, Fourvière, Saint‑Just, Point‑du‑Jour, Ménival, Champvert.
             </p>
             <Button variant="default" size="lg" asChild>
               <Link to="/presentation">

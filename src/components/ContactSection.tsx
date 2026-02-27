@@ -16,13 +16,13 @@ const ContactSection = () => {
           </h2>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-8 mt-8">
             <a
-              href="mailto:cptslyon5@gmail.com"
+              href="mailto:cptslyon3@gmail.com"
               className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
             >
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <Mail className="w-5 h-5 text-primary" />
               </div>
-              <span className="font-medium">cptslyon5@gmail.com</span>
+              <span className="font-medium">cptslyon3@gmail.com</span>
             </a>
             <div className="flex items-center gap-3 text-foreground">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">

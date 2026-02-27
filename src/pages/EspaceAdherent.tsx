@@ -40,8 +40,8 @@ const tarifs = [
 
 const faq = [
   {
-    q: "Qui peut adhérer à la CPTS Lyon 5 ?",
-    a: "Tous les professionnels de santé exerçant sur le territoire de Lyon 5ème (libéraux, salariés de structures de soins, etc.) peuvent adhérer à la CPTS.",
+    q: "Qui peut adhérer à la CPTS Lyon 3 ?",
+    a: "Tous les professionnels de santé exerçant sur le territoire de Lyon 3ème (libéraux, salariés de structures de soins, etc.) peuvent adhérer à la CPTS.",
   },
   {
     q: "Comment fonctionne l'adhésion ?",
@@ -77,7 +77,7 @@ const EspaceAdherent = () => {
               transition={{ delay: 0.1 }}
               className="mt-4 text-lg text-navy-foreground/80 max-w-2xl mx-auto"
             >
-              Rejoignez la communauté des professionnels de santé de Lyon 5 et participez à la coordination des soins.
+              Rejoignez la communauté des professionnels de santé de Lyon 3 et participez à la coordination des soins.
             </motion.p>
           </div>
         </section>
@@ -131,7 +131,7 @@ const EspaceAdherent = () => {
                 </Link>
               </Button>
               <p className="text-sm text-muted-foreground mt-3">
-                Ou contactez-nous : <Mail className="w-3 h-3 inline" /> contact@cptslyon5.fr · <Phone className="w-3 h-3 inline" /> 04 XX XX XX XX
+                Ou contactez-nous : <Mail className="w-3 h-3 inline" /> contact@cptslyon3.fr · <Phone className="w-3 h-3 inline" /> 04 XX XX XX XX
               </p>
             </div>
           </div>

@@ -18,7 +18,7 @@ const articles = [
   {
     id: 2,
     title: "Rencontre pluriprofessionnelle",
-    excerpt: "La CPTS Lyon 5 organise une rencontre pluriprofessionnelle entre les médecins généralistes, les psychomotriciennes et les orthophonistes du territoire…",
+    excerpt: "La CPTS Lyon 3 organise une rencontre pluriprofessionnelle entre les médecins généralistes, les psychomotriciennes et les orthophonistes du territoire…",
     date: "il y a 3 semaines",
     category: "Actualités",
     image: news2,
@@ -26,7 +26,7 @@ const articles = [
   {
     id: 3,
     title: "Wébinaire – Présentation des dispositifs de l'hôpital du Vinatier",
-    excerpt: "La CPTS Lyon 5 vous propose un temps d'échange en format webinaire avec le CMP Perrache afin de vous présenter…",
+    excerpt: "La CPTS Lyon 3 vous propose un temps d'échange en format webinaire avec le CMP Perrache afin de vous présenter…",
     date: "il y a 2 mois",
     category: "Actualités",
     image: news3,

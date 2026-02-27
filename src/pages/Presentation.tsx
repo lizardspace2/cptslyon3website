@@ -26,7 +26,7 @@ const Presentation = () => {
             <div className="prose prose-lg max-w-none">
               <h2 className="text-3xl font-display font-bold text-foreground mb-6">Présentation de la CPTS</h2>
               <p className="text-muted-foreground leading-relaxed mb-6">
-                La Communauté Professionnelle Territoriale de Santé Lyon 5 est une association loi 1901, créée le 12 mars 2021, qui a pour objectif de coordonner et structurer l'offre de soins sur le territoire du 5ème arrondissement de Lyon (population de 48 277 habitants — INSEE, 2022).
+                La Communauté Professionnelle Territoriale de Santé Lyon 3 est une association loi 1901, créée le 12 mars 2021, qui a pour objectif de coordonner et structurer l'offre de soins sur le territoire du 3ème arrondissement de Lyon (population de 48 277 habitants — INSEE, 2022).
               </p>
               <p className="text-muted-foreground leading-relaxed mb-6">
                 Nous avons signé un contrat d'objectifs et de financement avec l'Assurance Maladie du Rhône et l'ARS Auvergne-Rhône-Alpes en septembre 2023.
