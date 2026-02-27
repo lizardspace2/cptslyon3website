@@ -1,7 +1,10 @@
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
+import MissionsSection from "@/components/MissionsSection";
 import NewsSection from "@/components/NewsSection";
 import KeyFigures from "@/components/KeyFigures";
+import FAQSection from "@/components/FAQSection";
+import PartnersSection from "@/components/PartnersSection";
 import NewsletterSection from "@/components/NewsletterSection";
 import TerritorySection from "@/components/TerritorySection";
 import SearchProSection from "@/components/SearchProSection";
@@ -14,8 +17,11 @@ const Index = () => {
       <Header />
       <main>
         <HeroSection />
+        <MissionsSection />
         <NewsSection />
         <KeyFigures />
+        <PartnersSection />
+        <FAQSection />
         <NewsletterSection />
         <TerritorySection />
         <SearchProSection />

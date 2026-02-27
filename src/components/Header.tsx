@@ -24,7 +24,7 @@ const Header = () => {
         <Link to="/" className="flex items-center gap-2">
           <div className="flex flex-col leading-tight">
             <span className="text-xl font-display font-bold text-gradient">CPTS</span>
-            <span className="text-xs font-semibold tracking-wider text-muted-foreground">LYON 5</span>
+            <span className="text-xs font-semibold tracking-wider text-muted-foreground">LYON 3</span>
           </div>
         </Link>
 
@@ -34,11 +34,10 @@ const Header = () => {
             <Link
               key={item.href}
               to={item.href}
-              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors hover:bg-accent hover:text-accent-foreground ${
-                location.pathname === item.href
+              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors hover:bg-accent hover:text-accent-foreground ${location.pathname === item.href
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground"
-              }`}
+                }`}
             >
               {item.label}
             </Link>
@@ -72,42 +71,58 @@ const Header = () => {
       {/* Mobile menu */}
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="lg:hidden overflow-hidden bg-card border-b"
-          >
-            <nav className="container py-4 flex flex-col gap-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`px-4 py-3 text-sm font-medium rounded-lg transition-colors hover:bg-accent ${
-                    location.pathname === item.href
-                      ? "bg-accent text-accent-foreground"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              <div className="flex gap-2 mt-3 px-4">
-                <Button variant="nav-outline" size="sm" className="flex-1" asChild>
-                  <Link to="/annuaire" onClick={() => setMobileOpen(false)}>
-                    <Search className="w-4 h-4" />
-                    Recherche médecin
-                  </Link>
-                </Button>
-                <Button variant="nav" size="sm" className="flex-1" asChild>
-                  <Link to="/espace-adherent" onClick={() => setMobileOpen(false)}>
-                    Adhérer
-                  </Link>
-                </Button>
-              </div>
-            </nav>
-          </motion.div>
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 top-[65px] z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+              onClick={() => setMobileOpen(false)}
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-[65px] bottom-0 z-50 w-[280px] bg-card border-l shadow-2xl lg:hidden"
+            >
+              <nav className="p-6 flex flex-col gap-2">
+                {navItems.map((item, i) => (
+                  <motion.div
+                    key={item.href}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                  >
+                    <Link
+                      to={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${location.pathname === item.href
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted"
+                        }`}
+                    >
+                      {item.label}
+                    </Link>
+                  </motion.div>
+                ))}
+                <div className="mt-8 pt-6 border-t flex flex-col gap-3">
+                  <Button variant="outline" className="justify-start gap-2 rounded-xl" asChild>
+                    <Link to="/annuaire" onClick={() => setMobileOpen(false)}>
+                      <Search className="w-4 h-4 text-primary" />
+                      Recherche Pro
+                    </Link>
+                  </Button>
+                  <Button className="justify-start gap-2 rounded-xl" asChild>
+                    <Link to="/espace-adherent" onClick={() => setMobileOpen(false)}>
+                      <UserPlus className="w-4 h-4" />
+                      Devenir Adhérent
+                    </Link>
+                  </Button>
+                </div>
+              </nav>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </header>

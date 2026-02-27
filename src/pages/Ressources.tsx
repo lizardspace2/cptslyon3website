@@ -13,12 +13,15 @@ const documents = [
   { title: "Charte de la CPTS Lyon 3", description: "Charte d'engagement des professionnels adhérents.", icon: FileText, category: "protocoles" },
   { title: "Fiche parcours patient complexe", description: "Outil de coordination pour les situations complexes.", icon: ClipboardList, category: "outils" },
   { title: "Kit de communication", description: "Supports de communication pour informer vos patients.", icon: FileText, category: "outils" },
+  { title: "Règlement intérieur", description: "Règlement de fonctionnement de l'association.", icon: FileText, category: "protocoles" },
+  { title: "Modèle de lettre de liaison", description: "Modèle pour faciliter la communication ville-hôpital.", icon: ClipboardList, category: "outils" },
 ];
 
 const webinars = [
   { title: "Coordination ville-hôpital", date: "12 février 2025", duration: "45 min" },
   { title: "Prise en charge des patients chroniques", date: "28 janvier 2025", duration: "1h" },
   { title: "Outils numériques en santé", date: "15 décembre 2024", duration: "30 min" },
+  { title: "Actualités Vaccinations", date: "10 novembre 2024", duration: "1h" },
 ];
 
 const links = [
@@ -26,6 +29,8 @@ const links = [
   { title: "CPAM du Rhône", url: "#", description: "Caisse primaire d'assurance maladie" },
   { title: "Ordre des Médecins du Rhône", url: "#", description: "Conseil départemental" },
   { title: "URPS Médecins Libéraux", url: "#", description: "Union régionale des professionnels de santé" },
+  { title: "Ameli pour les Professionnels", url: "#", description: "Services en ligne de l'Assurance Maladie" },
+  { title: "DGS Urgent", url: "#", description: "Alertes sanitaires de la Direction Générale de la Santé" },
 ];
 
 const Ressources = () => {
