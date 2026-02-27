@@ -31,11 +31,7 @@ const avantages = [
 ];
 
 const tarifs = [
-  { profession: "Médecin", cotisation: "50 €/an" },
-  { profession: "Infirmier(ère)", cotisation: "30 €/an" },
-  { profession: "Kinésithérapeute", cotisation: "30 €/an" },
-  { profession: "Pharmacien(ne)", cotisation: "40 €/an" },
-  { profession: "Autre professionnel de santé", cotisation: "25 €/an" },
+  { profession: "Tous les professionnels de santé", cotisation: "10 €/an" },
 ];
 
 const faq = [
