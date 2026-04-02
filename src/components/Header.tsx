@@ -29,14 +29,14 @@ const Header = () => {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-1 bg-navy/5 p-1 rounded-full border border-navy/5">
+        <nav className="hidden lg:flex items-center gap-1 bg-white/50 backdrop-blur-md p-1 rounded-full border border-navy/5 shadow-2xl shadow-navy/[0.02]">
           {navItems.map((item) => (
             <Link
               key={item.href}
               to={item.href}
-              className={`px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-300 hover:text-sky-600 ${location.pathname === item.href
-                  ? "bg-white text-navy shadow-sm"
-                  : "text-navy/60 hover:bg-white/50"
+              className={`px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-500 hover:text-sky-600 ${location.pathname === item.href
+                  ? "bg-navy text-white shadow-xl shadow-navy/20"
+                  : "text-navy/60 hover:bg-white"
                 }`}
             >
               {item.label}
@@ -44,16 +44,16 @@ const Header = () => {
           ))}
         </nav>
 
-        <div className="hidden lg:flex items-center gap-4">
-          <Button variant="ghost" className="text-navy font-semibold hover:bg-sky-50 hover:text-sky-600 rounded-full" asChild>
+        <div className="hidden lg:flex items-center gap-6">
+          <Button variant="ghost" className="text-navy font-bold hover:bg-sky-50 hover:text-sky-600 rounded-full h-12 px-6 transition-all" asChild>
             <Link to="/annuaire">
-              <Search className="w-4 h-4 mr-2" />
+              <Search className="w-4 h-4 mr-2" strokeWidth={2.5} />
               Recherche
             </Link>
           </Button>
-          <Button className="bg-navy hover:bg-navy/90 text-white font-bold rounded-full px-6" asChild>
+          <Button className="bg-navy hover:bg-sky-600 text-white font-black rounded-full px-8 h-12 shadow-xl shadow-navy/20 transition-all hover:scale-105 active:scale-95" asChild>
             <Link to="/espace-adherent">
-              <UserPlus className="w-4 h-4 mr-2" />
+              <UserPlus className="w-4 h-4 mr-2" strokeWidth={2.5} />
               Adhérer
             </Link>
           </Button>
