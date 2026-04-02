@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { Stethoscope, UserRound, Activity, Users as UsersIcon, HeartPulse, Building2, MapPin } from "lucide-react";
 import lyon3GeoJSON from "@/assets/lyon3.json";
 
 const TerritorySection = () => {
@@ -86,11 +87,53 @@ const TerritorySection = () => {
                 CPTS Lyon 3
               </h2>
               
-              <div className="space-y-5 relative z-10">
-                <h3 className="text-navy/90 font-semibold text-lg">Les communes de la CPTS Lyon 3 :</h3>
-                <div className="flex flex-wrap gap-4">
-                  <div className="inline-block px-6 py-2.5 rounded-full border border-sky-600/40 text-sky-800 font-medium text-sm bg-white shadow-sm hover:shadow-md transition-shadow">
-                    Lyon 3e Arrondissement
+              <div className="space-y-6 relative z-10">
+                <div>
+                  <h3 className="text-navy/90 font-bold text-lg mb-4 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-sky-600" />
+                    Le territoire :
+                  </h3>
+                  <div className="flex flex-wrap gap-4 mb-4">
+                    <div className="inline-block px-6 py-2.5 rounded-full border border-sky-600/40 text-sky-800 font-medium text-sm bg-white shadow-sm hover:shadow-md transition-shadow">
+                      Lyon 3e Arrondissement
+                    </div>
+                  </div>
+                  <p className="text-navy/70 text-sm italic">
+                    C'est l'arrondissement le plus peuplé de Lyon, avec plus de 101 800 habitants.
+                  </p>
+                </div>
+
+                <div className="pt-6 border-t border-navy/5">
+                  <h3 className="text-navy/90 font-bold text-lg mb-6 flex items-center gap-2">
+                    <Stethoscope className="w-5 h-5 text-sky-600" />
+                    Offre de soins (Insee 2024) :
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { label: "Médecins généralistes", count: 85, icon: Stethoscope },
+                      { label: "Dentistes", count: 83, icon: Activity },
+                      { label: "Kinésithérapeutes", count: 163, icon: Activity },
+                      { label: "Infirmiers", count: 113, icon: HeartPulse },
+                      { label: "Psychologues", count: 210, icon: UserRound },
+                      { label: "Pharmacies", count: 29, icon: Building2 },
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex flex-col">
+                        <span className="text-2xl font-bold text-navy">{item.count}</span>
+                        <span className="text-navy/60 text-xs font-semibold uppercase tracking-wider leading-tight">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-8 bg-sky-600/5 rounded-2xl p-6 border border-sky-600/10">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
+                        <UsersIcon className="w-6 h-6 text-sky-600" />
+                      </div>
+                      <div>
+                        <div className="text-navy font-bold">1 médecin pour 1 198 habitants</div>
+                        <div className="text-navy/60 text-xs uppercase font-bold tracking-wider">Densité médicale</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

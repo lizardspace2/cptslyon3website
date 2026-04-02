@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, LogIn } from "lucide-react";
 import { motion } from "framer-motion";
-import heroImage from "@/assets/hero-lyon5.jpg";
+import heroImage from "@/assets/lyon-3-pont-lafayette.jpg";
 
 const HeroSection = () => {
   return (
@@ -55,7 +55,7 @@ const HeroSection = () => {
                 ))}
               </div>
               <p className="text-sm font-semibold text-navy/60">
-                <span className="text-navy font-bold">+90 professionnels</span> nous font confiance
+                <span className="text-navy font-bold">67 professionnels</span> nous font confiance
               </p>
             </div>
           </motion.div>
@@ -69,7 +69,7 @@ const HeroSection = () => {
             <div className="relative z-10 rounded-[3rem] overflow-hidden shadow-2xl shadow-navy/10">
               <img 
                 src={heroImage} 
-                alt="Vue de Lyon 3" 
+                alt="Pont Lafayette, Lyon 3" 
                 className="w-full h-[500px] lg:h-[700px] object-cover hover:scale-105 transition-transform duration-700" 
               />
               <div className="absolute inset-0 bg-gradient-to-t from-navy/40 to-transparent pointer-events-none" />

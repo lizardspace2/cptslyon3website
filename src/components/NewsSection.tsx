@@ -2,9 +2,9 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Clock, Plus } from "lucide-react";
 import { motion } from "framer-motion";
-import news1 from "@/assets/news-1.jpg";
-import news2 from "@/assets/news-2.jpg";
-import news3 from "@/assets/news-3.jpg";
+import news1 from "@/assets/lyon-place-bellecour.jpg";
+import news2 from "@/assets/lyon-hotel-de-ville.jpg";
+import news3 from "@/assets/lyon-vue-generale.jpg";
 
 const articles = [
   {
