@@ -79,15 +79,15 @@ const HeroSection = () => {
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#FCE280] rounded-full blur-3xl opacity-60 -z-10 animate-pulse" />
             <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-sky-100 rounded-full blur-3xl opacity-80 -z-10" />
             
-            <div className="absolute top-1/2 -left-12 lg:-left-20 transform -translate-y-1/2 hidden md:block">
-              <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-xl border border-white/50 max-w-[220px]">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-sky-500 flex items-center justify-center text-white">
-                    <ArrowRight className="w-5 h-5 -rotate-45" />
+            <div className="absolute top-1/2 -left-12 lg:-left-24 transform -translate-y-1/2 hidden md:block z-30">
+              <div className="bg-white/95 backdrop-blur-md p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(21,42,66,0.1)] border border-white/50 max-w-[240px] hover:-translate-y-2 transition-transform duration-500">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-sky-500 flex items-center justify-center text-white shadow-lg shadow-sky-500/20">
+                    <ArrowRight className="w-6 h-6 -rotate-45" />
                   </div>
-                  <span className="font-bold text-navy">Proximité</span>
+                  <span className="font-display font-black text-navy uppercase tracking-widest text-[10px]">Proximité</span>
                 </div>
-                <p className="text-xs text-navy/70 leading-relaxed font-medium">
+                <p className="text-sm text-navy/60 leading-relaxed font-bold italic">
                   Un réseau local de soins à l'écoute du 3ème arrondissement.
                 </p>
               </div>

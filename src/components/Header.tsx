@@ -1,21 +1,27 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search, UserPlus } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Menu, X, Search, UserPlus, Users, UserSearch, Newspaper, FileText, Zap, ShieldCheck, MessageCircle, ArrowRight } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const navItems = [
-  { label: "Présentation", href: "/presentation" },
-  { label: "Annuaire", href: "/annuaire" },
-  { label: "Actualités", href: "/actualites" },
-  { label: "Ressources", href: "/ressources" },
-  { label: "Remplacement", href: "/remplacement" },
-  { label: "Espace adhérent", href: "/espace-adherent" },
-  { label: "Contact", href: "/contact" },
+  { label: "Présentation", href: "/presentation", icon: Users },
+  { label: "Annuaire", href: "/annuaire", icon: UserSearch },
+  { label: "Actualités", href: "/actualites", icon: Newspaper },
+  { label: "Ressources", href: "/ressources", icon: FileText },
+  { label: "Remplacement", href: "/remplacement", icon: Zap },
+  { label: "Espace adhérent", href: "/espace-adherent", icon: ShieldCheck },
+  { label: "Contact", href: "/contact", icon: MessageCircle },
 ];
 
 const Header = () => {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
   return (
@@ -59,86 +65,63 @@ const Header = () => {
           </Button>
         </div>
 
-        {/* Mobile toggle */}
-        <button
-          className="lg:hidden p-3 rounded-full bg-navy/5 text-navy hover:bg-navy/10 transition-colors"
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
-          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-      </div>
-
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 top-0 z-40 bg-navy/20 backdrop-blur-sm lg:hidden"
-              onClick={() => setMobileOpen(false)}
-            />
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 bottom-0 z-50 w-[85%] max-w-[350px] bg-white shadow-2xl lg:hidden flex flex-col"
-            >
-              <div className="p-6 flex items-center justify-between border-b border-navy/5">
-                <div className="flex flex-col leading-none">
-                  <span className="text-xl font-display font-bold text-navy">CPTS</span>
-                  <span className="text-[10px] font-bold tracking-[0.2em] text-sky-600/80 uppercase">Lyon 3</span>
-                </div>
-                <button 
-                  onClick={() => setMobileOpen(false)}
-                  className="p-2 rounded-full bg-navy/5 text-navy"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <nav className="p-6 flex flex-col gap-2 overflow-y-auto grow">
-                {navItems.map((item, i) => (
-                  <motion.div
-                    key={item.href}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                  >
+        {/* Mobile Nav with Sheet */}
+        <div className="lg:hidden">
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <button className="p-3 rounded-full bg-navy/5 text-navy hover:bg-navy/10 transition-colors">
+                <Menu className="w-6 h-6" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[85%] sm:max-w-md p-0 bg-white border-l-0 shadow-2xl">
+              <div className="flex flex-col h-full bg-white">
+                <SheetHeader className="p-8 border-b border-navy/5 bg-white shrink-0">
+                  <SheetTitle className="text-left flex flex-col leading-none">
+                    <span className="text-2xl font-display font-bold text-navy uppercase tracking-tight">CPTS</span>
+                    <span className="text-xs font-black tracking-[0.4em] text-sky-600 uppercase">Lyon 3</span>
+                  </SheetTitle>
+                </SheetHeader>
+                
+                <nav className="flex-1 overflow-y-auto p-6 flex flex-col gap-2 bg-white">
+                  <p className="px-5 py-2 font-black text-[10px] uppercase tracking-[0.5em] text-navy/30 mb-2">Navigation</p>
+                  {navItems.map((item) => (
                     <Link
+                      key={item.href}
                       to={item.href}
-                      onClick={() => setMobileOpen(false)}
-                      className={`block px-5 py-4 text-lg font-semibold rounded-2xl transition-all ${location.pathname === item.href
-                          ? "bg-sky-50 text-sky-600"
-                          : "text-navy/70 hover:bg-navy/5 hover:text-navy"
+                      onClick={() => setIsOpen(false)}
+                      className={`flex items-center gap-5 p-5 rounded-[2rem] transition-all duration-300 border ${location.pathname === item.href
+                          ? "bg-navy text-white shadow-xl shadow-navy/20 border-navy"
+                          : "bg-white text-navy/70 hover:bg-sky-50 border-navy/5"
                         }`}
                     >
-                      {item.label}
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${location.pathname === item.href ? "bg-white/10 text-white" : "bg-sky-50 text-sky-600"}`}>
+                        <item.icon className="w-6 h-6" strokeWidth={1.5} />
+                      </div>
+                      <span className="text-lg font-display font-bold tracking-tight">{item.label}</span>
+                      <ArrowRight className={`ml-auto w-5 h-5 transition-transform duration-300 ${location.pathname === item.href ? "opacity-30" : "opacity-0"}`} />
                     </Link>
-                  </motion.div>
-                ))}
-              </nav>
-              
-              <div className="p-6 border-t border-navy/5 bg-navy/[0.02] flex flex-col gap-3">
-                <Button className="w-full bg-navy hover:bg-navy/90 text-white font-bold rounded-xl h-14" asChild>
-                  <Link to="/espace-adherent" onClick={() => setMobileOpen(false)}>
-                    <UserPlus className="w-5 h-5 mr-3" />
-                    Adhérer à la CPTS
-                  </Link>
-                </Button>
-                <Button variant="outline" className="w-full border-navy/10 text-navy font-semibold rounded-xl h-14" asChild>
-                  <Link to="/annuaire" onClick={() => setMobileOpen(false)}>
-                    <Search className="w-5 h-5 mr-3 text-sky-600" />
-                    Trouver un professionnel
-                  </Link>
-                </Button>
+                  ))}
+                </nav>
+                
+                <div className="p-8 border-t border-navy/5 bg-white flex flex-col gap-4 shadow-[0_-15px_50px_rgba(0,0,0,0.03)] shrink-0">
+                  <Button className="w-full h-18 py-8 rounded-[1.5rem] bg-navy hover:bg-sky-600 text-white font-black text-lg shadow-xl shadow-navy/10 transition-all flex items-center justify-center gap-4" asChild>
+                    <Link to="/espace-adherent" onClick={() => setIsOpen(false)}>
+                      <UserPlus className="w-6 h-6" />
+                      Adhérer à la CPTS
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="w-full h-18 py-8 rounded-[1.5rem] border-navy/10 text-navy font-bold text-lg hover:bg-sky-50 transition-all flex items-center justify-center gap-4" asChild>
+                    <Link to="/annuaire" onClick={() => setIsOpen(false)}>
+                      <Search className="w-6 h-6 text-sky-600" />
+                      Annuaire Santé
+                    </Link>
+                  </Button>
+                </div>
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
     </header>
   );
 };
