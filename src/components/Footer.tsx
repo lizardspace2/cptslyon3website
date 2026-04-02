@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Mail, MapPin, Facebook, Twitter, Instagram } from "lucide-react";
+import { Mail, MapPin, Phone, Facebook, Twitter, Instagram } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -45,7 +45,13 @@ const Footer = () => {
               </li>
               <li className="flex items-start gap-2 text-sm text-navy-foreground/70">
                 <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>6 Rue Marie-Louise et Anne-Marie Soucelier, 69005 Lyon</span>
+                <span>24 rue Barrier, 69006 Lyon</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-navy-foreground/70">
+                <Phone className="w-4 h-4 mt-0.5 shrink-0" />
+                <a href="tel:0745281626" className="hover:text-navy-foreground transition-colors">
+                  07 45 28 16 26
+                </a>
               </li>
             </ul>
           </div>

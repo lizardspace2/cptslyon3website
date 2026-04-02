@@ -3,9 +3,9 @@ import { motion, useInView } from "framer-motion";
 import { Users, MapPin, Briefcase } from "lucide-react";
 
 const figures = [
-  { value: 120, label: "Adhérents", icon: Users, suffix: "" },
-  { value: 40000, label: "Habitants", icon: MapPin, suffix: "" },
-  { value: 8, label: "Salariés", icon: Briefcase, suffix: "" },
+  { value: 101000, label: "Habitants couverts", icon: MapPin, suffix: "" },
+  { value: 577, label: "Professionnels de santé", icon: Briefcase, suffix: "" },
+  { value: 90, label: "Adhérents", icon: Users, suffix: "" },
 ];
 
 const AnimatedCounter = ({ target, duration = 2 }: { target: number; duration?: number }) => {

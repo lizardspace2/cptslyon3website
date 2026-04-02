@@ -1,4 +1,4 @@
-import { Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 import { motion } from "framer-motion";
 
 const ContactSection = () => {
@@ -28,8 +28,17 @@ const ContactSection = () => {
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <MapPin className="w-5 h-5 text-primary" />
               </div>
-              <span className="font-medium text-sm">6 Rue Marie-Louise et Anne-Marie Soucelier, 69005 Lyon</span>
+              <span className="font-medium text-sm">24 rue Barrier, 69006 Lyon</span>
             </div>
+            <a
+              href="tel:0745281626"
+              className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Phone className="w-5 h-5 text-primary" />
+              </div>
+              <span className="font-medium">07 45 28 16 26</span>
+            </a>
           </div>
         </motion.div>
       </div>

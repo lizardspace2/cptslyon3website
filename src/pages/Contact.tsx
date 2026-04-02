@@ -57,7 +57,18 @@ const Contact = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold text-foreground">Adresse</h3>
-                      <p className="text-muted-foreground">6 Rue Marie-Louise et Anne-Marie Soucelier, 69005 Lyon</p>
+                      <p className="text-muted-foreground">24 rue Barrier, 69006 Lyon</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <Phone className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Téléphone</h3>
+                      <a href="tel:0745281626" className="text-muted-foreground hover:text-primary transition-colors">
+                        07 45 28 16 26
+                      </a>
                     </div>
                   </div>
                 </div>

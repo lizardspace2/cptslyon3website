@@ -127,7 +127,7 @@ const EspaceAdherent = () => {
                 </Link>
               </Button>
               <p className="text-sm text-muted-foreground mt-3">
-                Ou contactez-nous : <Mail className="w-3 h-3 inline" /> contact@cptslyon3.fr · <Phone className="w-3 h-3 inline" /> 04 XX XX XX XX
+                Ou contactez-nous : <Mail className="w-3 h-3 inline" /> cptslyon3@gmail.com · <Phone className="w-3 h-3 inline" /> 07 45 28 16 26
               </p>
             </div>
           </div>
