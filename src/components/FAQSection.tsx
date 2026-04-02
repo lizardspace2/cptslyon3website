@@ -27,14 +27,23 @@ const faqs = [
 
 const FAQSection = () => {
     return (
-        <section className="py-24 bg-muted/30">
+        <section className="py-24 md:py-32 bg-[#F4F9FD]/30">
             <div className="container max-w-4xl">
-                <div className="text-center mb-16">
+                <div className="text-center mb-20">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        className="inline-block px-4 py-1.5 rounded-full border border-navy/10 text-navy/60 font-bold text-sm mb-6 bg-white"
+                    >
+                        FAQ
+                    </motion.div>
                     <motion.h2
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="text-3xl md:text-4xl font-display font-bold mb-4"
+                        transition={{ delay: 0.1 }}
+                        className="text-4xl md:text-5xl font-display font-bold text-navy mb-8"
                     >
                         Questions fréquentes
                     </motion.h2>
@@ -42,25 +51,25 @@ const FAQSection = () => {
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        transition={{ delay: 0.1 }}
-                        className="text-muted-foreground"
+                        transition={{ delay: 0.2 }}
+                        className="text-navy/60 text-lg font-medium"
                     >
-                        Tout ce que vous devez savoir sur la CPTS Lyon 3.
+                        Tout ce que vous devez savoir sur la CPTS Lyon 3 pour nous rejoindre sereinement.
                     </motion.p>
                 </div>
 
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                 >
-                    <Accordion type="single" collapsible className="w-full bg-background rounded-2xl p-6 md:p-8 shadow-sm">
+                    <Accordion type="single" collapsible className="w-full bg-white rounded-[2.5rem] p-8 md:p-12 shadow-xl shadow-navy/[0.03] border border-navy/5">
                         {faqs.map((faq, i) => (
-                            <AccordionItem key={i} value={`item-${i}`} className="border-b last:border-0 border-muted">
-                                <AccordionTrigger className="text-left font-semibold text-lg hover:no-underline py-5">
+                            <AccordionItem key={i} value={`item-${i}`} className="border-b last:border-0 border-navy/5">
+                                <AccordionTrigger className="text-left font-bold text-xl md:text-2xl text-navy hover:text-sky-600 hover:no-underline py-8 transition-colors">
                                     {faq.question}
                                 </AccordionTrigger>
-                                <AccordionContent className="text-muted-foreground text-base leading-relaxed pb-5">
+                                <AccordionContent className="text-navy/60 text-lg font-medium leading-relaxed pb-8">
                                     {faq.answer}
                                 </AccordionContent>
                             </AccordionItem>

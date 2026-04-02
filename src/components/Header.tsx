@@ -19,24 +19,24 @@ const Header = () => {
   const location = useLocation();
 
   return (
-    <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b">
-      <div className="container flex items-center justify-between h-16 md:h-20">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex flex-col leading-tight">
-            <span className="text-xl font-display font-bold text-gradient">CPTS</span>
-            <span className="text-xs font-semibold tracking-wider text-muted-foreground">LYON 3</span>
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-navy/5">
+      <div className="container flex items-center justify-between h-20 md:h-24">
+        <Link to="/" className="flex items-center gap-2 group">
+          <div className="flex flex-col leading-none">
+            <span className="text-2xl font-display font-bold text-navy group-hover:text-sky-600 transition-colors">CPTS</span>
+            <span className="text-[10px] font-bold tracking-[0.2em] text-sky-600/80 uppercase">Lyon 3</span>
           </div>
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-1 bg-navy/5 p-1 rounded-full border border-navy/5">
           {navItems.map((item) => (
             <Link
               key={item.href}
               to={item.href}
-              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors hover:bg-accent hover:text-accent-foreground ${location.pathname === item.href
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground"
+              className={`px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-300 hover:text-sky-600 ${location.pathname === item.href
+                  ? "bg-white text-navy shadow-sm"
+                  : "text-navy/60 hover:bg-white/50"
                 }`}
             >
               {item.label}
@@ -44,16 +44,16 @@ const Header = () => {
           ))}
         </nav>
 
-        <div className="hidden lg:flex items-center gap-3">
-          <Button variant="nav-outline" size="sm" asChild>
+        <div className="hidden lg:flex items-center gap-4">
+          <Button variant="ghost" className="text-navy font-semibold hover:bg-sky-50 hover:text-sky-600 rounded-full" asChild>
             <Link to="/annuaire">
-              <Search className="w-4 h-4" />
-              Recherche médecin
+              <Search className="w-4 h-4 mr-2" />
+              Recherche
             </Link>
           </Button>
-          <Button variant="nav" size="sm" asChild>
+          <Button className="bg-navy hover:bg-navy/90 text-white font-bold rounded-full px-6" asChild>
             <Link to="/espace-adherent">
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="w-4 h-4 mr-2" />
               Adhérer
             </Link>
           </Button>
@@ -61,7 +61,7 @@ const Header = () => {
 
         {/* Mobile toggle */}
         <button
-          className="lg:hidden p-2 rounded-lg hover:bg-accent"
+          className="lg:hidden p-3 rounded-full bg-navy/5 text-navy hover:bg-navy/10 transition-colors"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -76,7 +76,7 @@ const Header = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 top-[65px] z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+              className="fixed inset-0 top-0 z-40 bg-navy/20 backdrop-blur-sm lg:hidden"
               onClick={() => setMobileOpen(false)}
             />
             <motion.div
@@ -84,9 +84,22 @@ const Header = () => {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-[65px] bottom-0 z-50 w-[280px] bg-card border-l shadow-2xl lg:hidden"
+              className="fixed right-0 top-0 bottom-0 z-50 w-[85%] max-w-[350px] bg-white shadow-2xl lg:hidden flex flex-col"
             >
-              <nav className="p-6 flex flex-col gap-2">
+              <div className="p-6 flex items-center justify-between border-b border-navy/5">
+                <div className="flex flex-col leading-none">
+                  <span className="text-xl font-display font-bold text-navy">CPTS</span>
+                  <span className="text-[10px] font-bold tracking-[0.2em] text-sky-600/80 uppercase">Lyon 3</span>
+                </div>
+                <button 
+                  onClick={() => setMobileOpen(false)}
+                  className="p-2 rounded-full bg-navy/5 text-navy"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <nav className="p-6 flex flex-col gap-2 overflow-y-auto grow">
                 {navItems.map((item, i) => (
                   <motion.div
                     key={item.href}
@@ -97,30 +110,31 @@ const Header = () => {
                     <Link
                       to={item.href}
                       onClick={() => setMobileOpen(false)}
-                      className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${location.pathname === item.href
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted"
+                      className={`block px-5 py-4 text-lg font-semibold rounded-2xl transition-all ${location.pathname === item.href
+                          ? "bg-sky-50 text-sky-600"
+                          : "text-navy/70 hover:bg-navy/5 hover:text-navy"
                         }`}
                     >
                       {item.label}
                     </Link>
                   </motion.div>
                 ))}
-                <div className="mt-8 pt-6 border-t flex flex-col gap-3">
-                  <Button variant="outline" className="justify-start gap-2 rounded-xl" asChild>
-                    <Link to="/annuaire" onClick={() => setMobileOpen(false)}>
-                      <Search className="w-4 h-4 text-primary" />
-                      Recherche Pro
-                    </Link>
-                  </Button>
-                  <Button className="justify-start gap-2 rounded-xl" asChild>
-                    <Link to="/espace-adherent" onClick={() => setMobileOpen(false)}>
-                      <UserPlus className="w-4 h-4" />
-                      Devenir Adhérent
-                    </Link>
-                  </Button>
-                </div>
               </nav>
+              
+              <div className="p-6 border-t border-navy/5 bg-navy/[0.02] flex flex-col gap-3">
+                <Button className="w-full bg-navy hover:bg-navy/90 text-white font-bold rounded-xl h-14" asChild>
+                  <Link to="/espace-adherent" onClick={() => setMobileOpen(false)}>
+                    <UserPlus className="w-5 h-5 mr-3" />
+                    Adhérer à la CPTS
+                  </Link>
+                </Button>
+                <Button variant="outline" className="w-full border-navy/10 text-navy font-semibold rounded-xl h-14" asChild>
+                  <Link to="/annuaire" onClick={() => setMobileOpen(false)}>
+                    <Search className="w-5 h-5 mr-3 text-sky-600" />
+                    Trouver un professionnel
+                  </Link>
+                </Button>
+              </div>
             </motion.div>
           </>
         )}
