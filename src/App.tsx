@@ -11,6 +11,7 @@ import Contact from "./pages/Contact";
 import Ressources from "./pages/Ressources";
 import Remplacement from "./pages/Remplacement";
 import EspaceAdherent from "./pages/EspaceAdherent";
+import Agenda from "./pages/Agenda";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/ressources" element={<Ressources />} />
           <Route path="/remplacement" element={<Remplacement />} />
           <Route path="/espace-adherent" element={<EspaceAdherent />} />
+          <Route path="/agenda" element={<Agenda />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

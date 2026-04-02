@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search, UserPlus, Users, UserSearch, Newspaper, FileText, Zap, ShieldCheck, MessageCircle, ArrowRight } from "lucide-react";
+import { Menu, X, Search, UserPlus, Users, UserSearch, Newspaper, FileText, Zap, ShieldCheck, MessageCircle, ArrowRight, Calendar } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -17,6 +17,7 @@ const navItems = [
   { label: "Ressources", href: "/ressources", icon: FileText },
   { label: "Remplacement", href: "/remplacement", icon: Zap },
   { label: "Espace adhérent", href: "/espace-adherent", icon: ShieldCheck },
+  { label: "Agenda", href: "/agenda", icon: Calendar },
   { label: "Contact", href: "/contact", icon: MessageCircle },
 ];
 
