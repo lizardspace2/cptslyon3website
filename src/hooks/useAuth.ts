@@ -70,10 +70,8 @@ export function useAuth() {
       // If URL has hash params (from email confirmation link), exchange them
       const hash = window.location.hash;
       if (hash && (hash.includes('access_token') || hash.includes('type=signup') || hash.includes('type=recovery'))) {
-        // Let Supabase client parse the hash and create a session
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) console.error('Error exchanging token:', error);
-        // Clean up the URL hash
         window.history.replaceState(null, '', window.location.pathname);
         if (session?.user) {
           const member = await fetchMember(session.user.id);
@@ -84,6 +82,7 @@ export function useAuth() {
 
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
+        // Force refresh member data from DB to get the latest 'status'
         const member = await fetchMember(session.user.id);
         updateState(session.user, session, member);
       } else {
@@ -97,7 +96,7 @@ export function useAuth() {
       if (session?.user) {
         const member = await fetchMember(session.user.id);
         updateState(session.user, session, member);
-      } else {
+      } else if (event === 'SIGNED_OUT') {
         updateState(null, null, null);
       }
     });
