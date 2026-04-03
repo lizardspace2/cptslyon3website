@@ -314,14 +314,7 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  const { data: membersList } = useQuery({
-    queryKey: ["members_directory"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("members").select("*").eq("status", "approved").order("last_name");
-      if (error) throw error;
-      return data as Member[];
-    },
-  });
+
 
   const { data: news } = useQuery({
     queryKey: ["member_news"],
@@ -365,7 +358,6 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
   const sidebarItems = [
     { value: "home", label: "Accueil", icon: Home },
     { value: "profile", label: "Mon profil", icon: User },
-    { value: "directory", label: "Annuaire", icon: Users },
     { value: "resources", label: "Ressources", icon: FileText },
     { value: "news", label: "Actualités", icon: Newspaper },
   ];
@@ -411,20 +403,7 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
                           <p className="text-navy/40 font-bold italic">{member.specialty}</p>
                         </div>
                       </div>
-                      <div className="grid gap-6 md:grid-cols-3">
-                        <div className="p-6 bg-sky-50/50 rounded-[2rem] border border-sky-100 text-center">
-                          <p className="text-3xl font-black text-sky-600">{membersList?.length || 0}</p>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-navy/30 mt-1">Adhérents</p>
-                        </div>
-                        <div className="p-6 bg-emerald-50/50 rounded-[2rem] border border-emerald-100 text-center">
-                          <p className="text-3xl font-black text-emerald-600">{resources?.length || 0}</p>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-navy/30 mt-1">Ressources</p>
-                        </div>
-                        <div className="p-6 bg-amber-50/50 rounded-[2rem] border border-amber-100 text-center">
-                          <p className="text-3xl font-black text-amber-600">{news?.length || 0}</p>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-navy/30 mt-1">Actualités</p>
-                        </div>
-                      </div>
+
                     </Card>
                   </TabsContent>
 
@@ -458,35 +437,7 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
                     </Card>
                   </TabsContent>
 
-                  {/* DIRECTORY */}
-                  <TabsContent value="directory" className="mt-0">
-                    <h2 className="text-3xl font-display font-bold text-navy tracking-tight mb-8">Annuaire des Adhérents</h2>
-                    <div className="grid gap-4">
-                      {membersList?.map((m) => (
-                        <Card key={m.id} className="rounded-[2rem] border border-navy/5 shadow-xl bg-white p-6 hover:border-sky-600/20 transition-all">
-                          <div className="flex items-center gap-6">
-                            <div className="w-14 h-14 bg-sky-50 rounded-xl flex items-center justify-center shrink-0 border border-sky-100">
-                              <User className="w-7 h-7 text-sky-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-display font-bold text-navy tracking-tight text-lg">{m.title} {m.first_name} {m.last_name}</p>
-                              <p className="text-navy/40 text-sm font-bold">{m.specialty}</p>
-                            </div>
-                            <div className="text-right text-sm text-navy/30 hidden md:block">
-                              {m.public_phone && <p className="flex items-center gap-2 justify-end"><Phone className="w-3 h-3" />{m.public_phone}</p>}
-                              {m.email && <p className="flex items-center gap-2 justify-end"><Mail className="w-3 h-3" />{m.email}</p>}
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                      {(!membersList || membersList.length === 0) && (
-                        <div className="p-16 text-center bg-white/40 rounded-[3rem] border border-navy/5">
-                          <Users className="w-12 h-12 text-navy/10 mx-auto mb-4" />
-                          <p className="text-navy/20 font-bold italic">Aucun adhérent pour le moment.</p>
-                        </div>
-                      )}
-                    </div>
-                  </TabsContent>
+
 
                   {/* RESOURCES */}
                   <TabsContent value="resources" className="mt-0">
