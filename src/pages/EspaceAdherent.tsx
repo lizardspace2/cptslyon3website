@@ -283,9 +283,17 @@ const PendingScreen = ({ member, isPending, onSignOut }: { member: Member; isPen
                 <p className="text-navy/50">{member.email}</p>
                 {member.address && <p className="text-navy/50">{member.address}</p>}
               </div>
-              <Button onClick={onSignOut} variant="outline" className="h-14 rounded-2xl px-10 font-bold border-navy/10 text-navy hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all">
-                <LogOut className="w-4 h-4 mr-2" /> Déconnexion
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  className="h-14 rounded-2xl px-10 font-black bg-sky-600 hover:bg-navy text-white shadow-xl transition-all"
+                >
+                  <Clock className="w-5 h-5 mr-2" /> Vérifier mon statut
+                </Button>
+                <Button onClick={onSignOut} variant="outline" className="h-14 rounded-2xl px-10 font-bold border-navy/10 text-navy hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all">
+                  <LogOut className="w-4 h-4 mr-2" /> Déconnexion
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
