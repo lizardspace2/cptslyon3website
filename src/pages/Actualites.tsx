@@ -36,7 +36,7 @@ const Actualites = () => {
       <Header />
       <main>
         <PageBanner 
-          title="Actualités" 
+          title="Blog/Actualités" 
           subtitle="Suivez les dernières nouvelles de la CPTS et les événements du territoire."
         />
 

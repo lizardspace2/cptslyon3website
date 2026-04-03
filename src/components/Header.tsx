@@ -13,7 +13,7 @@ import {
 const navItems = [
   { label: "Présentation", href: "/presentation", icon: Users },
   { label: "Annuaire", href: "/annuaire", icon: UserSearch },
-  { label: "Actualités", href: "/actualites", icon: Newspaper },
+  { label: "Blog/Actualités", href: "/actualites", icon: Newspaper },
   { label: "Ressources", href: "/ressources", icon: FileText },
   { label: "Remplacement", href: "/remplacement", icon: Zap },
   { label: "Espace adhérent", href: "/espace-adherent", icon: ShieldCheck },

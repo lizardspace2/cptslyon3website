@@ -409,7 +409,7 @@ const Admin = () => {
                     <TabsList className="flex flex-col h-auto bg-white/40 backdrop-blur-3xl p-4 rounded-[3rem] border border-white/50 shadow-3xl shadow-navy/[0.02] gap-4 w-full">
                       {[
                         { value: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-                        { value: "news", label: "Actualités", icon: Newspaper },
+                        { value: "news", label: "Blog/Actualités", icon: Newspaper },
                         { value: "pros", label: "Annuaire", icon: Users },
                         { value: "resources", label: "Ressources", icon: FileText },
                         { value: "announcements", label: "Annonces", icon: Zap },
