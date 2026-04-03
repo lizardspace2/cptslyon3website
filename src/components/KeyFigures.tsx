@@ -5,7 +5,7 @@ import { Users, MapPin, Briefcase } from "lucide-react";
 const figures = [
   { value: 101838, label: "Habitants couverts", icon: MapPin, color: "text-sky-600", bg: "bg-sky-50" },
   { value: 680, label: "Professionnels de santé", icon: Briefcase, color: "text-emerald-600", bg: "bg-emerald-50" },
-  { value: 67, label: "Adhérents", icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
+  { value: 90, label: "Adhérents", icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
 ];
 
 const AnimatedCounter = ({ target, duration = 2 }: { target: number; duration?: number }) => {

@@ -12,45 +12,74 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-
-const annonces = [
-  {
-    type: "Recherche remplaçant",
-    profession: "Médecin généraliste",
-    lieu: "Lyon 3 – Montchat",
-    periode: "Du 10 au 21 mars 2025",
-    description: "Cabinet de groupe, 3 médecins. Patientèle variée. Logiciel Doctolib. Rétrocession 80%.",
-    urgent: true,
-    date: "il y a 2 jours",
-  },
-  {
-    type: "Recherche remplaçant",
-    profession: "Infirmier(ère)",
-    lieu: "Lyon 3 – Part-Dieu",
-    periode: "Tous les lundis à partir d'avril 2025",
-    description: "Cabinet libéral, tournée mixte (domicile + cabinet). Véhicule nécessaire.",
-    urgent: false,
-    date: "il y a 1 semaine",
-  },
-  {
-    type: "Disponible pour remplacement",
-    profession: "Kinésithérapeute",
-    lieu: "Lyon 3 et alentours",
-    periode: "Disponible de suite",
-    description: "5 ans d'expérience. Spécialisé en rééducation post-opératoire et sport.",
-    urgent: false,
-    date: "il y a 3 semaines",
-  },
-];
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { Loader2, ExternalLink, Mail as MailIcon, Phone as PhoneIcon, Copy } from "lucide-react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter 
+} from "@/components/ui/dialog";
 
 const Remplacement = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [submitted, setSubmitted] = useState(false);
+  const [selectedAnnonce, setSelectedAnnonce] = useState<any>(null);
+  const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
+
+  const [formData, setFormData] = useState({
+    type: "Recherche remplaçant",
+    profession: "",
+    nom: "",
+    email: "",
+    periode: "",
+    description: "",
+    phone: ""
+  });
+
+  const { data: replacements, isLoading } = useQuery({
+    queryKey: ["replacements"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("replacements")
+        .select("*")
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const announcementMutation = useMutation({
+    mutationFn: async (newData: any) => {
+      const { error } = await supabase.from("replacements").insert([{
+        ...newData,
+        status: "pending",
+        urgent: newData.description.toLowerCase().includes("urgent")
+      }]);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setSubmitted(true);
+      toast({ title: "Annonce envoyée", description: "Votre annonce sera publiée après validation par le bureau." });
+    },
+    onError: (error: any) => {
+      toast({ variant: "destructive", title: "Erreur", description: error.message });
+    }
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    toast({ title: "Annonce envoyée", description: "Votre annonce sera publiée après validation." });
+    announcementMutation.mutate(formData);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copié !", description: "Les coordonnées ont été copiées." });
   };
 
   return (
@@ -75,15 +104,20 @@ const Remplacement = () => {
               </div>
               <div className="flex items-center gap-4 bg-white px-8 py-4 rounded-[2rem] border border-navy/5 shadow-2xl shadow-navy/[0.02]">
                 <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-display font-bold text-navy">{annonces.length} annonces</span>
+                <span className="font-display font-bold text-navy">{(replacements || []).length} annonces</span>
                 <span className="text-navy/20 font-bold font-display italic">actives</span>
               </div>
             </div>
 
             <div className="grid gap-16">
-              {annonces.map((a, i) => (
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <Loader2 className="w-16 h-16 text-sky-600 animate-spin mb-6" />
+                  <p className="text-navy/40 font-display font-bold italic animate-pulse">Chargement des annonces...</p>
+                </div>
+              ) : (replacements || []).length > 0 ? (replacements || []).map((a: any, i: number) => (
                 <motion.article 
-                  key={i} 
+                  key={a.id} 
                   initial={{ opacity: 0, x: -30 }} 
                   whileInView={{ opacity: 1, x: 0 }} 
                   viewport={{ once: true }}
@@ -105,7 +139,7 @@ const Remplacement = () => {
                           )}
                           <div className="ml-auto flex items-center gap-3 text-navy/20 font-black text-[10px] uppercase tracking-widest bg-sky-50/50 px-5 py-2.5 rounded-full border border-sky-600/5 group-hover/card:text-sky-600 transition-colors">
                             <Clock className="w-3.5 h-3.5" />
-                            {a.date}
+                            {new Date(a.created_at).toLocaleDateString("fr-FR", { day: 'numeric', month: 'long' })}
                           </div>
                         </div>
                         
@@ -132,7 +166,13 @@ const Remplacement = () => {
                          <div className="w-24 h-24 bg-white/5 backdrop-blur-xl rounded-[2rem] flex items-center justify-center mb-10 shadow-3xl border border-white/5 group-hover/card:bg-sky-600 group-hover/card:text-white transition-all duration-700 group-hover/card:scale-110 group-hover/card:rotate-6">
                             <UserSearch className="w-12 h-12 text-sky-400 group-hover/card:text-white" strokeWidth={1} />
                          </div>
-                         <Button className="w-full h-20 rounded-[1.8rem] bg-white text-navy hover:bg-sky-400 hover:text-navy font-black text-lg transition-all shadow-3xl shadow-white/5 active:scale-95 group-hover/card:-translate-y-2 flex items-center justify-center gap-4 group/btn">
+                         <Button 
+                           onClick={() => {
+                             setSelectedAnnonce(a);
+                             setIsReplyModalOpen(true);
+                           }}
+                           className="w-full h-20 rounded-[1.8rem] bg-white text-navy hover:bg-sky-400 hover:text-navy font-black text-lg transition-all shadow-3xl shadow-white/5 active:scale-95 group-hover/card:-translate-y-2 flex items-center justify-center gap-4 group/btn"
+                         >
                            Répondre
                            <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-3 transition-transform" />
                          </Button>
@@ -140,7 +180,12 @@ const Remplacement = () => {
                     </div>
                   </Card>
                 </motion.article>
-              ))}
+              )) : (
+                <div className="p-20 text-center bg-sky-50/30 rounded-[3rem] border border-dashed border-sky-600/10">
+                   <UserSearch className="w-16 h-16 text-sky-600/20 mx-auto mb-6" />
+                   <p className="text-xl font-bold text-navy/20 italic tracking-tight">Aucune annonce disponible sur le territoire pour le moment.</p>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -189,11 +234,11 @@ const Remplacement = () => {
                             <span className="w-2 h-2 rounded-full bg-sky-500" />
                             Type d'annonce
                           </Label>
-                          <Select>
+                          <Select value={formData.type} onValueChange={(val) => setFormData({...formData, type: val})}>
                             <SelectTrigger className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy focus:ring-sky-500/20 transition-all text-lg px-8"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                             <SelectContent className="rounded-[2rem] border-navy/5 shadow-3xl p-3 bg-white/95 backdrop-blur-xl">
-                              <SelectItem value="recherche" className="rounded-[1.2rem] h-14 font-bold text-lg focus:bg-sky-50 focus:text-sky-700">Recherche remplaçant</SelectItem>
-                              <SelectItem value="disponible" className="rounded-[1.2rem] h-14 font-bold text-lg focus:bg-sky-50 focus:text-sky-700">Disponible</SelectItem>
+                              <SelectItem value="Recherche remplaçant" className="rounded-[1.2rem] h-14 font-bold text-lg focus:bg-sky-50 focus:text-sky-700">Recherche remplaçant</SelectItem>
+                              <SelectItem value="Disponible" className="rounded-[1.2rem] h-14 font-bold text-lg focus:bg-sky-50 focus:text-sky-700">Disponible</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -202,13 +247,14 @@ const Remplacement = () => {
                             <span className="w-2 h-2 rounded-full bg-sky-500" />
                             Profession
                           </Label>
-                          <Select>
+                          <Select value={formData.profession} onValueChange={(val) => setFormData({...formData, profession: val})}>
                             <SelectTrigger className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy focus:ring-sky-500/20 transition-all text-lg px-8"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                             <SelectContent className="rounded-[2rem] border-navy/5 shadow-3xl p-3 bg-white/95 backdrop-blur-xl">
-                              <SelectItem value="medecin" className="rounded-[1.2rem] h-14 font-bold text-lg">Médecin généraliste</SelectItem>
-                              <SelectItem value="infirmier" className="rounded-[1.2rem] h-14 font-bold text-lg">Infirmier(ère)</SelectItem>
-                              <SelectItem value="kine" className="rounded-[1.2rem] h-14 font-bold text-lg">Kinésithérapeute</SelectItem>
-                              <SelectItem value="autre" className="rounded-[1.2rem] h-14 font-bold text-lg">Autre</SelectItem>
+                              <SelectItem value="Médecin généraliste" className="rounded-[1.2rem] h-14 font-bold text-lg">Médecin généraliste</SelectItem>
+                              <SelectItem value="Infirmier(ère)" className="rounded-[1.2rem] h-14 font-bold text-lg">Infirmier(ère)</SelectItem>
+                              <SelectItem value="Kinésithérapeute" className="rounded-[1.2rem] h-14 font-bold text-lg">Kinésithérapeute</SelectItem>
+                              <SelectItem value="Sage-femme" className="rounded-[1.2rem] h-14 font-bold text-lg">Sage-femme</SelectItem>
+                              <SelectItem value="Autre" className="rounded-[1.2rem] h-14 font-bold text-lg">Autre</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -220,14 +266,31 @@ const Remplacement = () => {
                             <span className="w-2 h-2 rounded-full bg-sky-500" />
                             Votre Identité
                           </Label>
-                          <Input id="nom" placeholder="Ex: Dr. Sarah Martin" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner" />
+                          <Input id="nom" value={formData.nom} onChange={(e) => setFormData({...formData, nom: e.target.value})} placeholder="Ex: Dr. Sarah Martin" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner" />
                         </div>
                         <div className="space-y-6">
                           <Label htmlFor="email" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
                             <span className="w-2 h-2 rounded-full bg-sky-500" />
-                            Contact Direct
+                            Contact Direct (Email)
                           </Label>
-                          <Input id="email" type="email" placeholder="sarah.m@medical.fr" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner" />
+                          <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="sarah.m@medical.fr" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner" />
+                        </div>
+                      </div>
+
+                      <div className="grid gap-12 md:grid-cols-2">
+                        <div className="space-y-6">
+                          <Label htmlFor="phone" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                            <span className="w-2 h-2 rounded-full bg-sky-500" />
+                            Téléphone (Optionnel)
+                          </Label>
+                          <Input id="phone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="06 XX XX XX XX" className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner" />
+                        </div>
+                        <div className="space-y-6">
+                          <Label htmlFor="lieu" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                            <span className="w-2 h-2 rounded-full bg-sky-500" />
+                            Lieu
+                          </Label>
+                          <Input id="lieu" placeholder="Ex: Lyon 3 – Montchat" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner" />
                         </div>
                       </div>
 
@@ -236,7 +299,7 @@ const Remplacement = () => {
                           <span className="w-2 h-2 rounded-full bg-sky-500" />
                           Calendrier Prévu
                         </Label>
-                        <Input id="periode" placeholder="Ex: Du 10 au 25 Août – Possible extension" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner" />
+                        <Input id="periode" value={formData.periode} onChange={(e) => setFormData({...formData, periode: e.target.value})} placeholder="Ex: Du 10 au 25 Août – Possible extension" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner" />
                       </div>
 
                       <div className="space-y-6">
@@ -244,7 +307,7 @@ const Remplacement = () => {
                           <span className="w-2 h-2 rounded-full bg-sky-500" />
                           Détails de l'offre
                         </Label>
-                        <Textarea id="description" placeholder="Logiciel, patientèle, rétrocession, outils à disposition..." rows={5} required className="rounded-[2.5rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg p-10 shadow-inner" />
+                        <Textarea id="description" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} placeholder="Logiciel, patientèle, rétrocession, outils à disposition..." rows={5} required className="rounded-[2.5rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg p-10 shadow-inner" />
                       </div>
 
                       <div className="pt-8">
@@ -263,6 +326,70 @@ const Remplacement = () => {
         </section>
       </main>
       <Footer />
+
+      {/* Reply Modal */}
+      <Dialog open={isReplyModalOpen} onOpenChange={setIsReplyModalOpen}>
+        <DialogContent className="rounded-[4rem] border-navy/5 bg-white p-12 max-w-2xl shadow-3xl">
+          <DialogHeader className="mb-10">
+            <DialogTitle className="text-4xl font-display font-bold text-navy tracking-tight mb-4">Répondre à l'annonce</DialogTitle>
+            <DialogDescription className="text-lg italic text-navy/40 font-medium">
+              Contactez directement la personne en charge de cette offre.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedAnnonce && (
+            <div className="space-y-10 py-4">
+              <div className="p-10 rounded-[3rem] bg-sky-50/30 border border-sky-600/5">
+                <h4 className="text-sky-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Poste</h4>
+                <p className="text-2xl font-display font-bold text-navy">{selectedAnnonce.profession}</p>
+              </div>
+
+              <div className="grid gap-6">
+                <div className="flex items-center justify-between p-8 rounded-[2.5rem] bg-white border border-navy/5 shadow-2xl shadow-navy/[0.02] hover:border-sky-600/30 transition-all group">
+                  <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 group-hover:bg-sky-600 group-hover:text-white transition-all">
+                      <MailIcon className="w-8 h-8" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-black tracking-widest text-navy/20 mb-1">Email</p>
+                      <p className="font-bold text-navy text-lg">{selectedAnnonce.email}</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => copyToClipboard(selectedAnnonce.email)} className="rounded-2xl h-14 w-14 hover:bg-sky-50 hover:text-sky-600 text-navy/20">
+                    <Copy className="w-5 h-5" />
+                  </Button>
+                </div>
+
+                {selectedAnnonce.phone && (
+                  <div className="flex items-center justify-between p-8 rounded-[2.5rem] bg-white border border-navy/5 shadow-2xl shadow-navy/[0.02] hover:border-sky-600/30 transition-all group">
+                    <div className="flex items-center gap-6">
+                      <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                        <PhoneIcon className="w-8 h-8" strokeWidth={1.5} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-black tracking-widest text-navy/20 mb-1">Téléphone</p>
+                        <p className="font-bold text-navy text-lg">{selectedAnnonce.phone}</p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => copyToClipboard(selectedAnnonce.phone)} className="rounded-2xl h-14 w-14 hover:bg-emerald-50 hover:text-emerald-600 text-navy/20">
+                      <Copy className="w-5 h-5" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-6">
+                <Button className="w-full h-24 rounded-[2.5rem] bg-navy text-white hover:bg-sky-600 font-black text-xl transition-all shadow-3xl shadow-navy/30 flex items-center justify-center gap-4 group" asChild>
+                  <a href={`mailto:${selectedAnnonce.email}?subject=Réponse à votre annonce: ${selectedAnnonce.profession}`}>
+                    <MailIcon className="w-7 h-7 group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />
+                    Envoyer un email direct
+                  </a>
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

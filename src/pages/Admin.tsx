@@ -24,7 +24,8 @@ import {
   Phone, 
   PhoneForwarded,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Zap
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -104,6 +105,20 @@ interface Message {
   email: string;
   phone: string;
   message: string;
+  created_at: string;
+}
+
+interface Replacement {
+  id: string;
+  type: string;
+  profession: string;
+  lieu: string;
+  periode: string;
+  description: string;
+  urgent: boolean;
+  email: string;
+  phone?: string;
+  status: string;
   created_at: string;
 }
 
@@ -239,6 +254,15 @@ const Admin = () => {
       const { data, error } = await supabase.from("contacts").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       return data as Message[];
+    }
+  });
+
+  const { data: announcements, isLoading: loadingAnnouncements } = useQuery({
+    queryKey: ["admin_announcements"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("replacements").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as Replacement[];
     }
   });
 
@@ -388,6 +412,7 @@ const Admin = () => {
                         { value: "news", label: "Actualités", icon: Newspaper },
                         { value: "pros", label: "Annuaire", icon: Users },
                         { value: "resources", label: "Ressources", icon: FileText },
+                        { value: "announcements", label: "Annonces", icon: Zap },
                         { value: "messages", label: "Messages", icon: Mail },
                         { value: "settings", label: "Paramètres", icon: Settings },
                       ].map((tab) => (
@@ -989,6 +1014,75 @@ const Admin = () => {
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
+                  </TabsContent>
+
+                  {/* Announcements Management */}
+                  <TabsContent value="announcements" className="mt-0 outline-none">
+                    <div className="mb-12">
+                      <h2 className="text-4xl font-display font-bold text-navy tracking-tight mb-4">Gestion des Annonces</h2>
+                      <p className="text-navy/40 font-medium italic text-lg leading-relaxed">Approuvez ou archivez les offres de remplacement.</p>
+                    </div>
+
+                    <div className="grid gap-6">
+                      {loadingAnnouncements ? <Loader /> : (announcements && announcements.length > 0) ? announcements.map(item => (
+                        <Card 
+                          key={item.id} 
+                          className="rounded-[2.5rem] border border-navy/5 shadow-2xl bg-white overflow-hidden p-8 hover:border-sky-600/30 transition-all duration-500 group/item"
+                        >
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                            <div className="flex-1">
+                               <div className="flex items-center gap-4 mb-4">
+                                  <h3 className="text-xl font-display font-bold text-navy tracking-tight uppercase">{item.profession}</h3>
+                                  <span className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase border ${item.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100 animate-pulse'}`}>
+                                    {item.status === 'active' ? 'En ligne' : 'En attente'}
+                                  </span>
+                                  {item.urgent && (
+                                    <span className="px-3 py-1 rounded-full bg-rose-500 text-white text-[8px] font-black uppercase tracking-widest animate-bounce">Urgent</span>
+                                  )}
+                               </div>
+                               <div className="flex flex-wrap gap-x-8 gap-y-2 mb-6">
+                                  <p className="flex items-center gap-2 text-navy/40 font-bold text-xs"><MapPin className="w-3 h-3" /> {item.lieu}</p>
+                                  <p className="flex items-center gap-2 text-navy/40 font-bold text-xs"><Calendar className="w-3 h-3" /> {item.periode}</p>
+                                  <p className="flex items-center gap-2 text-navy/40 font-bold text-xs"><Mail className="w-3 h-3" /> {item.email}</p>
+                               </div>
+                               <p className="text-navy/60 italic leading-relaxed text-sm bg-sky-50/20 p-4 rounded-2xl">"{item.description}"</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                               {item.status !== 'active' && (
+                                 <Button 
+                                   variant="ghost" 
+                                   size="icon"
+                                   className="text-emerald-500 hover:bg-emerald-50 rounded-2xl h-14 w-14"
+                                   onClick={async () => {
+                                     const { error } = await supabase.from("replacements").update({ status: 'active' }).eq("id", item.id);
+                                     if (error) toast({ variant: "destructive", title: "Erreur", description: error.message });
+                                     else queryClient.invalidateQueries({ queryKey: ["admin_announcements"] });
+                                   }}
+                                 >
+                                    <CheckCircle2 className="w-6 h-6" />
+                                 </Button>
+                               )}
+                               <Button 
+                                 variant="ghost" 
+                                 size="icon" 
+                                 className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl h-14 w-14"
+                                 onClick={() => {
+                                   setItemToDelete({ table: 'replacements', id: item.id });
+                                   setIsDeleteDialogOpen(true);
+                                 }}
+                               >
+                                 <Trash2 className="w-6 h-6" />
+                               </Button>
+                            </div>
+                          </div>
+                        </Card>
+                      )) : (
+                        <div className="p-20 text-center bg-white/40 backdrop-blur-3xl rounded-[3rem] border border-navy/5">
+                           <Zap className="w-16 h-16 text-navy/10 mx-auto mb-6" />
+                           <p className="text-xl font-bold text-navy/20 italic">Aucune annonce de remplacement.</p>
+                        </div>
+                      )}
+                    </div>
                   </TabsContent>
 
                   {/* Messages Management */}
