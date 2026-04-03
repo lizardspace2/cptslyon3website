@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import type { User, Session } from '@supabase/supabase-js';
 
 export interface Member {
   id: string;
   email: string;
+  password?: string;
   title?: string;
   first_name?: string;
   last_name?: string;
@@ -18,8 +18,6 @@ export interface Member {
 }
 
 interface AuthState {
-  user: User | null;
-  session: Session | null;
   member: Member | null;
   loading: boolean;
   isApproved: boolean;
@@ -27,10 +25,10 @@ interface AuthState {
   isRejected: boolean;
 }
 
+const SESSION_KEY = 'cpts_member_session';
+
 export function useAuth() {
   const [state, setState] = useState<AuthState>({
-    user: null,
-    session: null,
     member: null,
     loading: true,
     isApproved: false,
@@ -38,11 +36,11 @@ export function useAuth() {
     isRejected: false,
   });
 
-  const fetchMember = useCallback(async (userId: string) => {
+  const fetchMember = useCallback(async (memberId: string) => {
     const { data, error } = await supabase
       .from('members')
       .select('*')
-      .eq('id', userId)
+      .eq('id', memberId)
       .maybeSingle();
 
     if (error) {
@@ -52,56 +50,35 @@ export function useAuth() {
     return data as Member | null;
   }, []);
 
-  const updateState = useCallback((user: User | null, session: Session | null, member: Member | null) => {
+  const updateState = useCallback((member: Member | null) => {
     setState({
-      user,
-      session,
       member,
       loading: false,
       isApproved: member?.status === 'approved',
       isPending: member?.status === 'pending',
       isRejected: member?.status === 'rejected',
     });
+    
+    if (member) {
+      localStorage.setItem(SESSION_KEY, member.id);
+    } else {
+      localStorage.removeItem(SESSION_KEY);
+    }
   }, []);
 
   useEffect(() => {
-    // Get initial session — also handles email confirmation redirect tokens
     const init = async () => {
-      // If URL has hash params (from email confirmation link), exchange them
-      const hash = window.location.hash;
-      if (hash && (hash.includes('access_token') || hash.includes('type=signup') || hash.includes('type=recovery'))) {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) console.error('Error exchanging token:', error);
-        window.history.replaceState(null, '', window.location.pathname);
-        if (session?.user) {
-          const member = await fetchMember(session.user.id);
-          updateState(session.user, session, member);
+      const savedMemberId = localStorage.getItem(SESSION_KEY);
+      if (savedMemberId) {
+        const member = await fetchMember(savedMemberId);
+        if (member) {
+          updateState(member);
           return;
         }
       }
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        // Force refresh member data from DB to get the latest 'status'
-        const member = await fetchMember(session.user.id);
-        updateState(session.user, session, member);
-      } else {
-        updateState(null, null, null);
-      }
+      updateState(null);
     };
     init();
-
-    // Listen for auth changes (including email confirmation)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const member = await fetchMember(session.user.id);
-        updateState(session.user, session, member);
-      } else if (event === 'SIGNED_OUT') {
-        updateState(null, null, null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
   }, [fetchMember, updateState]);
 
   const signUp = async (
@@ -109,22 +86,21 @@ export function useAuth() {
     password: string,
     memberData: Omit<Member, 'id' | 'email' | 'status' | 'created_at'>
   ) => {
-    // 1. Create auth user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/espace-adherent`,
-      },
-    });
+    // Check if email already exists
+    const { data: existing } = await supabase
+      .from('members')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+    
+    if (existing) {
+      throw new Error('Cet email est déjà utilisé.');
+    }
 
-    if (authError) throw authError;
-    if (!authData.user) throw new Error('Erreur lors de la création du compte.');
-
-    // 2. Insert member row
-    const { error: memberError } = await supabase.from('members').insert({
-      id: authData.user.id,
+    // Insert member row
+    const { data, error } = await supabase.from('members').insert({
       email,
+      password, // Plain text as requested for simplicity
       title: memberData.title || null,
       first_name: memberData.first_name || null,
       last_name: memberData.last_name || null,
@@ -134,57 +110,65 @@ export function useAuth() {
       address: memberData.address || null,
       photo_url: memberData.photo_url || null,
       status: 'pending',
-    });
+    }).select().single();
 
-    if (memberError) throw memberError;
+    if (error) throw error;
 
-    // Refresh the state locally to show "Pending" screen immediately
-    const member = await fetchMember(authData.user.id);
-    updateState(authData.user, authData.session, member);
-
-    return authData;
+    const newMember = data as Member;
+    updateState(newMember);
+    return newMember;
   };
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data, error } = await supabase
+      .from('members')
+      .select('*')
+      .eq('email', email)
+      .eq('password', password)
+      .maybeSingle();
+
     if (error) throw error;
-    return data;
+    if (!data) throw new Error('Email ou mot de passe incorrect.');
+
+    const member = data as Member;
+    updateState(member);
+    return member;
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    updateState(null);
   };
 
   const updateProfile = async (updates: Partial<Omit<Member, 'id' | 'email' | 'status' | 'created_at'>>) => {
-    if (!state.user) throw new Error('Non connecté');
+    if (!state.member) throw new Error('Non connecté');
     const { error } = await supabase
       .from('members')
       .update(updates)
-      .eq('id', state.user.id);
+      .eq('id', state.member.id);
+    
     if (error) throw error;
 
     // Refresh member data
-    const member = await fetchMember(state.user.id);
+    const member = await fetchMember(state.member.id);
     if (member) {
-      updateState(state.user, state.session, member);
+      updateState(member);
     }
   };
 
   return {
+    user: state.member, // Keep 'user' alias for compatibility with components
+    member: state.member,
     ...state,
     signUp,
     signIn,
     signOut,
     updateProfile,
     refreshMember: async () => {
-      if (state.user) {
-        const member = await fetchMember(state.user.id);
-        updateState(state.user, state.session, member);
+      if (state.member) {
+        const member = await fetchMember(state.member.id);
+        updateState(member);
       }
     },
   };
 }
+
