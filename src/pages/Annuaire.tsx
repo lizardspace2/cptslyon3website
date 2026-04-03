@@ -7,19 +7,37 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-const professionals = [
-  { name: "Dr. Martin Dupont", specialty: "Médecin généraliste", phone: "04 78 XX XX XX", address: "12 Rue de la République, 69003" },
-  { name: "Sophie Leroux", specialty: "Infirmière libérale", phone: "06 XX XX XX XX", address: "45 Avenue Félix Faure, 69003" },
-  { name: "Pierre Moreau", specialty: "Kinésithérapeute", phone: "04 72 XX XX XX", address: "8 Place Guichard, 69003" },
-  { name: "Marie Blanc", specialty: "Orthophoniste", phone: "04 78 XX XX XX", address: "23 Rue de la Villette, 69003" },
-  { name: "Jean-Luc Bernard", specialty: "Diététicien", phone: "06 XX XX XX XX", address: "5 Quai Victor Augagneur, 69003" },
-  { name: "Dr. Claire Fontaine", specialty: "Médecin généraliste", phone: "04 78 XX XX XX", address: "17 Rue Servient, 69003" },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { Loader2, AlertCircle } from "lucide-react";
+
+interface Professional {
+  id: string;
+  name: string;
+  specialty: string;
+  phone: string;
+  address: string;
+  description?: string;
+  image_url?: string;
+}
 
 const Annuaire = () => {
   const [search, setSearch] = useState("");
 
-  const filtered = professionals.filter(
+  const { data: professionals, isLoading, error } = useQuery({
+    queryKey: ["professionals"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("professionals")
+        .select("*")
+        .order("name");
+      
+      if (error) throw error;
+      return data as Professional[];
+    },
+  });
+
+  const filtered = (professionals || []).filter(
     (p) =>
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.specialty.toLowerCase().includes(search.toLowerCase())
@@ -57,7 +75,22 @@ const Annuaire = () => {
             </motion.div>
 
             <div className="grid gap-12 lg:gap-16">
-              {filtered.map((pro, i) => (
+              {isLoading && (
+                <div className="flex flex-col items-center justify-center py-40">
+                  <Loader2 className="w-16 h-16 text-sky-600 animate-spin mb-6" />
+                  <p className="text-navy/40 font-display font-bold text-2xl italic">Chargement de l'annuaire...</p>
+                </div>
+              )}
+
+              {error && (
+                <div className="flex flex-col items-center justify-center py-40 bg-red-50/50 rounded-[4rem] border border-dashed border-red-200">
+                  <AlertCircle className="w-16 h-16 text-red-400 mb-6" />
+                  <h4 className="text-navy font-display font-bold text-3xl mb-4">Erreur de connexion</h4>
+                  <p className="text-navy/40 font-bold text-xl italic">Impossible de récupérer la liste des professionnels.</p>
+                </div>
+              )}
+
+              {!isLoading && !error && filtered.map((pro, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, x: -20 }}

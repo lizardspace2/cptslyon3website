@@ -11,14 +11,45 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 
+import { supabase } from "@/lib/supabase";
+
 const Contact = () => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({ title: "Message envoyé", description: "Nous vous répondrons dans les plus brefs délais." });
-    setFormData({ name: "", email: "", message: "" });
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await supabase
+        .from("contacts")
+        .insert([
+          { 
+            name: formData.name, 
+            email: formData.email, 
+            message: formData.message 
+          }
+        ]);
+
+      if (error) throw error;
+
+      toast({ 
+        title: "Message envoyé avec succès", 
+        description: "Nous avons bien reçu votre demande et vous répondrons sous peu." 
+      });
+      setFormData({ name: "", email: "", message: "" });
+    } catch (error: any) {
+      console.error("Error sending contact message:", error);
+      toast({ 
+        variant: "destructive",
+        title: "Erreur lors de l'envoi", 
+        description: "Désolé, une erreur technique est survenue. Veuillez réessayer plus tard." 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -149,9 +180,23 @@ const Contact = () => {
                         />
                       </div>
                       <div className="pt-8">
-                        <Button type="submit" className="w-full h-24 rounded-[2.5rem] bg-navy hover:bg-sky-600 text-white font-black text-2xl shadow-[0_30px_60px_rgba(21,42,66,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-6 group/submit border-b-8 border-navy-foreground/10" size="lg">
-                          <Send className="w-8 h-8 group-hover/submit:translate-x-4 group-hover/submit:-translate-y-4 transition-transform duration-500" />
-                          Transmettre ma demande
+                        <Button 
+                          type="submit" 
+                          disabled={isSubmitting}
+                          className="w-full h-24 rounded-[2.5rem] bg-navy hover:bg-sky-600 text-white font-black text-2xl shadow-[0_30px_60px_rgba(21,42,66,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-6 group/submit border-b-8 border-navy-foreground/10 disabled:opacity-70" 
+                          size="lg"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                              Transmission...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-8 h-8 group-hover/submit:translate-x-4 group-hover/submit:-translate-y-4 transition-transform duration-500" />
+                              Transmettre ma demande
+                            </>
+                          )}
                         </Button>
                       </div>
                     </form>
