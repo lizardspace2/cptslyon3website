@@ -860,27 +860,39 @@ const Admin = () => {
                       }} 
                     />
                     <div className="grid gap-6">
-                      {loadingResources ? <Loader /> : resources?.map(item => (
-                        <AdminListItem 
-                          key={item.id} 
-                          title={item.title} 
-                          subtitle={item.type.toUpperCase()}
-                          onEdit={() => {
-                            setEditingResource(item);
-                            setNewResource({
-                              title: item.title,
-                              description: item.description,
-                              type: item.type,
-                              url: item.url,
-                            });
-                            setIsAddResourceOpen(true);
-                          }}
-                          onDelete={() => {
-                            setItemToDelete({ table: 'resources', id: item.id });
-                            setIsDeleteDialogOpen(true);
-                          }}
-                        />
-                      ))}
+                      {loadingResources ? <Loader /> : resources?.map(item => {
+                        const colors: Record<string, string> = {
+                          guide: "sky",
+                          protocole: "emerald",
+                          outil: "amber",
+                          webinaire: "purple",
+                          lien: "navy"
+                        };
+                        const color = colors[item.type as keyof typeof colors] || "slate";
+                        
+                        return (
+                          <AdminListItem 
+                            key={item.id} 
+                            title={item.title} 
+                            subtitle={item.type.toUpperCase()}
+                            badgeColor={color}
+                            onEdit={() => {
+                              setEditingResource(item);
+                              setNewResource({
+                                title: item.title,
+                                description: item.description,
+                                type: item.type,
+                                url: item.url,
+                              });
+                              setIsAddResourceOpen(true);
+                            }}
+                            onDelete={() => {
+                              setItemToDelete({ table: 'resources', id: item.id });
+                              setIsDeleteDialogOpen(true);
+                            }}
+                          />
+                        );
+                      })}
                     </div>
 
                     <Dialog open={isAddResourceOpen} onOpenChange={setIsAddResourceOpen}>
@@ -900,10 +912,10 @@ const Admin = () => {
                                 />
                               </div>
                               <div className="grid gap-3">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Type</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Catégorie</Label>
                                 <Select value={newResource.type} onValueChange={(val) => setNewResource({...newResource, type: val})}>
                                    <SelectTrigger className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy">
-                                      <SelectValue placeholder="Type" />
+                                      <SelectValue placeholder="Choisir une catégorie" />
                                    </SelectTrigger>
                                    <SelectContent>
                                       {[
@@ -1293,34 +1305,53 @@ const SectionHeader = ({ title, description, onAdd }: any) => (
   </div>
 );
 
-const AdminListItem = ({ title, subtitle, onEdit, onDelete }: any) => (
-  <Card className="rounded-[2.5rem] border border-navy/5 shadow-2xl bg-white overflow-hidden p-8 hover:border-sky-600/30 transition-all duration-500 group/item">
-    <div className="flex items-center justify-between gap-6">
-      <div className="flex-1 min-w-0">
-        <h3 className="text-xl font-display font-bold text-navy tracking-tight truncate group-hover/item:text-sky-600 transition-colors uppercase">{title}</h3>
-        <p className="text-navy/20 font-black text-[10px] uppercase tracking-widest mt-2">{subtitle}</p>
+const AdminListItem = ({ title, subtitle, onEdit, onDelete, badgeColor }: any) => {
+  const colorMap: Record<string, string> = {
+    sky: "bg-sky-50 text-sky-600 border-sky-100",
+    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    amber: "bg-amber-50 text-amber-600 border-amber-100",
+    purple: "bg-purple-50 text-purple-600 border-purple-100",
+    navy: "bg-navy/5 text-navy/60 border-navy/10",
+    slate: "bg-slate-50 text-slate-600 border-slate-100"
+  };
+  const colorClasses = colorMap[badgeColor as keyof typeof colorMap] || colorMap.slate;
+
+  return (
+    <Card className="rounded-[2.5rem] border border-navy/5 shadow-2xl bg-white overflow-hidden p-8 hover:border-sky-600/30 transition-all duration-500 group/item">
+      <div className="flex items-center justify-between gap-6">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-4 mb-2">
+            <h3 className="text-xl font-display font-bold text-navy tracking-tight truncate group-hover/item:text-sky-600 transition-colors uppercase">{title}</h3>
+            {badgeColor && (
+              <span className={`px-4 py-1 rounded-full text-[9px] font-black tracking-widest border transition-all ${colorClasses}`}>
+                {subtitle}
+              </span>
+            )}
+          </div>
+          {!badgeColor && <p className="text-navy/20 font-black text-[10px] uppercase tracking-widest mt-2">{subtitle}</p>}
+        </div>
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-navy/40 hover:text-sky-600 hover:bg-sky-50 rounded-2xl h-14 w-14 transition-all"
+            onClick={onEdit}
+          >
+            <Edit className="w-5 h-5" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl h-14 w-14 transition-all"
+            onClick={onDelete}
+          >
+            <Trash2 className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
-      <div className="flex items-center gap-4">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="text-navy/40 hover:text-sky-600 hover:bg-sky-50 rounded-2xl h-14 w-14 transition-all"
-          onClick={onEdit}
-        >
-          <Edit className="w-5 h-5" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl h-14 w-14 transition-all"
-          onClick={onDelete}
-        >
-          <Trash2 className="w-5 h-5" />
-        </Button>
-      </div>
-    </div>
-  </Card>
-);
+    </Card>
+  );
+};
 
 const Loader = () => (
   <div className="flex items-center justify-center py-20">

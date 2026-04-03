@@ -46,11 +46,11 @@ const Ressources = () => {
     },
   });
 
-  const guides = resources?.filter(r => r.type === 'guide') || [];
-  const protocoles = resources?.filter(r => r.type === 'protocole') || [];
-  const outils = resources?.filter(r => r.type === 'outil') || [];
-  const webinaires = resources?.filter(r => r.type === 'webinaire') || [];
-  const liens = resources?.filter(r => r.type === 'lien') || [];
+  const guides = resources?.filter(r => r.type?.toLowerCase() === 'guide') || [];
+  const protocoles = resources?.filter(r => r.type?.toLowerCase() === 'protocole') || [];
+  const outils = resources?.filter(r => r.type?.toLowerCase() === 'outil') || [];
+  const webinaires = resources?.filter(r => r.type?.toLowerCase() === 'webinaire') || [];
+  const liens = resources?.filter(r => r.type?.toLowerCase() === 'lien') || [];
   return (
     <div className="min-h-screen bg-background text-base">
       <Header />
@@ -60,7 +60,7 @@ const Ressources = () => {
           subtitle="Documents, guides et outils à disposition des professionnels de santé du territoire."
         />
 
-        <section className="py-24 relative overflow-hidden">
+        <section className="py-12 md:py-20 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(2,132,199,0.05),transparent)] pointer-events-none" />
           
           <div className="container max-w-6xl relative z-10">
@@ -107,7 +107,7 @@ const Ressources = () => {
                 ].map((category) => (
                   <TabsContent key={category.id} value={category.id} className="mt-0 outline-none">
                     <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-3">
-                      {category.data.map((doc, i) => {
+                      {category.data.length > 0 ? category.data.map((doc, i) => {
                         const Icon = getIconForType(doc.type);
                         return (
                           <motion.div 
@@ -141,14 +141,21 @@ const Ressources = () => {
                             </Card>
                           </motion.div>
                         );
-                      })}
+                      }) : (
+                        <div className="col-span-full flex flex-col items-center justify-center py-20 bg-navy/[0.02] rounded-[3rem] border border-dashed border-navy/10">
+                          <Bookmark className="w-12 h-12 text-navy/10 mb-4" />
+                          <p className="text-navy/30 font-bold italic text-lg text-center">
+                            Aucun document n'est disponible dans cette catégorie <br />pour le moment.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
                 ))}
 
                 <TabsContent value="webinaires" className="mt-0 outline-none">
                   <div className="grid gap-12">
-                    {webinaires.map((w, i) => (
+                    {webinaires.length > 0 ? webinaires.map((w, i) => (
                       <motion.div 
                         key={w.id} 
                         initial={{ opacity: 0, x: -20 }} 
@@ -182,7 +189,12 @@ const Ressources = () => {
                           </CardHeader>
                         </Card>
                       </motion.div>
-                    ))}
+                    )) : (
+                      <div className="flex flex-col items-center justify-center py-20 bg-navy/[0.02] rounded-[3rem] border border-dashed border-navy/10">
+                        <Video className="w-12 h-12 text-navy/10 mb-4" />
+                        <p className="text-navy/30 font-bold italic text-lg">Aucun webinaire disponible pour le moment.</p>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>
