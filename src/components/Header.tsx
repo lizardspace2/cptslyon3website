@@ -77,27 +77,27 @@ const Header = () => {
             </SheetTrigger>
             <SheetContent side="right" className="w-[85%] sm:max-w-md p-0 bg-white border-l-0 shadow-2xl">
               <div className="flex flex-col h-full bg-white">
-                <SheetHeader className="p-6 border-b border-navy/5 bg-white shrink-0">
+                <SheetHeader className="p-4 border-b border-navy/5 bg-white shrink-0">
                   <SheetTitle className="text-left flex flex-col leading-none">
                     <span className="text-2xl font-display font-bold text-navy uppercase tracking-tight">CPTS</span>
                     <span className="text-xs font-black tracking-[0.4em] text-sky-600 uppercase">Lyon 3</span>
                   </SheetTitle>
                 </SheetHeader>
                 
-                <nav className="flex-1 p-4 flex flex-col gap-1.5 bg-white overflow-y-auto min-h-0">
+                <nav className="flex-1 p-3 flex flex-col gap-1 bg-white overflow-y-auto min-h-0">
                   <p className="px-5 py-1 font-black text-[10px] uppercase tracking-[0.5em] text-navy/30 mb-1">Navigation</p>
                   {navItems.map((item) => (
                     <Link
                       key={item.href}
                       to={item.href}
                       onClick={() => setIsOpen(false)}
-                      className={`flex items-center gap-4 py-2.5 px-5 rounded-[1.5rem] transition-all duration-300 border ${location.pathname === item.href
+                      className={`flex items-center gap-4 py-1.5 px-5 rounded-xl transition-all duration-300 border ${location.pathname === item.href
                           ? "bg-navy text-white shadow-xl shadow-navy/20 border-navy"
                           : "bg-white text-navy/70 hover:bg-sky-50 border-navy/5"
                         }`}
                     >
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 ${location.pathname === item.href ? "bg-white/10 text-white" : "bg-sky-50 text-sky-600"}`}>
-                        <item.icon className="w-5 h-5" strokeWidth={1.5} />
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-300 ${location.pathname === item.href ? "bg-white/10 text-white" : "bg-sky-50 text-sky-600"}`}>
+                        <item.icon className="w-4 h-4" strokeWidth={1.5} />
                       </div>
                       <span className="font-display font-bold tracking-tight">{item.label}</span>
                       <ArrowRight className={`ml-auto w-4 h-4 transition-transform duration-300 ${location.pathname === item.href ? "opacity-30" : "opacity-0"}`} />
@@ -105,16 +105,16 @@ const Header = () => {
                   ))}
                 </nav>
                 
-                <div className="p-6 border-t border-navy/5 bg-white flex flex-col gap-3 shadow-[0_-15px_50px_rgba(0,0,0,0.03)] shrink-0">
-                  <Button className="w-full h-14 rounded-2xl bg-navy hover:bg-sky-600 text-white font-black text-md shadow-xl shadow-navy/10 transition-all flex items-center justify-center gap-3" asChild>
+                <div className="p-4 border-t border-navy/5 bg-white flex flex-col gap-1.5 shadow-[0_-15px_50px_rgba(0,0,0,0.03)] shrink-0">
+                  <Button className="w-full h-11 rounded-xl bg-navy hover:bg-sky-600 text-white font-black text-sm shadow-xl shadow-navy/10 transition-all flex items-center justify-center gap-2" asChild>
                     <Link to="/espace-adherent" onClick={() => setIsOpen(false)}>
-                      <UserPlus className="w-5 h-5" />
+                      <UserPlus className="w-4 h-4" />
                       Adhérer à la CPTS
                     </Link>
                   </Button>
-                  <Button variant="outline" className="w-full h-14 rounded-2xl border-navy/10 text-navy font-bold text-md hover:bg-sky-50 transition-all flex items-center justify-center gap-3 bg-white" asChild>
+                  <Button variant="outline" className="w-full h-11 rounded-xl border-navy/10 text-navy font-bold text-sm hover:bg-sky-50 transition-all flex items-center justify-center gap-2 bg-white" asChild>
                     <Link to="/annuaire" onClick={() => setIsOpen(false)}>
-                      <Search className="w-5 h-5 text-sky-600" />
+                      <Search className="w-4 h-4 text-sky-600" />
                       Annuaire Santé
                     </Link>
                   </Button>
