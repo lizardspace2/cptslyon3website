@@ -435,7 +435,7 @@ const Admin = () => {
                   <TabsContent value="dashboard" className="mt-0 outline-none">
                     <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 mb-12">
                       <StatCard count={news?.length || 0} label="Actualités" icon={Newspaper} color="sky" />
-                      <StatCard count={pros?.length || 0} label="Professionnels" icon={Users} color="emerald" />
+                      <StatCard count={pros?.length || 0} label="Professionnels dans l'annuaire" icon={Users} color="emerald" />
                       <StatCard count={messages?.length || 0} label="Messages Reçus" icon={Mail} color="navy" />
                     </div>
                     
