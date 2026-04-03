@@ -18,9 +18,11 @@ import {
   Loader2, 
   CheckCircle2, 
   ExternalLink, 
+  AlertCircle,
   Calendar, 
   Search, 
   MapPin, 
+  Navigation,
   Phone, 
   PhoneForwarded,
   Upload,
@@ -98,12 +100,12 @@ interface Resource {
 
 interface Message {
   id: string;
-  title: string;
-  first_name: string;
-  last_name: string;
-  name: string;
+  title?: string;
+  first_name?: string;
+  last_name?: string;
+  name?: string;
   email: string;
-  phone: string;
+  phone?: string;
   message: string;
   created_at: string;
 }
@@ -112,6 +114,10 @@ interface Replacement {
   id: string;
   type: string;
   profession: string;
+  titre?: string;
+  nom?: string;
+  prenom?: string;
+  adresse?: string;
   lieu: string;
   periode: string;
   description: string;
@@ -151,6 +157,39 @@ const Admin = () => {
     excerpt: "",
     category: "Santé",
     image_url: "",
+  });
+
+  // Announcements
+  const [isEditAnnouncementOpen, setIsEditAnnouncementOpen] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Replacement | null>(null);
+  const [newAnnouncement, setNewAnnouncement] = useState({
+    profession: "",
+    titre: "Dr.",
+    nom: "",
+    prenom: "",
+    adresse: "",
+    lieu: "",
+    periode: "",
+    description: "",
+    email: "",
+    phone: "",
+    urgent: false,
+    status: "active"
+  });
+
+  const announcementUpdateMutation = useMutation({
+    mutationFn: async (variables: { id: string; data: any }) => {
+      const { error } = await supabase.from("replacements").update(variables.data).eq("id", variables.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_announcements"] });
+      toast({ title: "Annonce mise à jour", description: "Les modifications ont été enregistrées avec succès.", className: "bg-emerald-500 text-white rounded-3xl" });
+      setIsEditAnnouncementOpen(false);
+    },
+    onError: (error) => {
+       toast({ variant: "destructive", title: "Erreur", description: error.message });
+    }
   });
 
   // Resources
@@ -248,7 +287,7 @@ const Admin = () => {
     }
   });
 
-  const { data: messages, isLoading: loadingMessages } = useQuery({
+  const { data: messages, isLoading: loadingMessages, error: errorMessages } = useQuery({
     queryKey: ["admin_messages"],
     queryFn: async () => {
       const { data, error } = await supabase.from("contacts").select("*").order("created_at", { ascending: false });
@@ -1032,7 +1071,10 @@ const Admin = () => {
                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div className="flex-1">
                                <div className="flex items-center gap-4 mb-4">
-                                  <h3 className="text-xl font-display font-bold text-navy tracking-tight uppercase">{item.profession}</h3>
+                                  <div className="flex flex-col">
+                                     <h3 className="text-xl font-display font-bold text-navy tracking-tight uppercase">{item.profession}</h3>
+                                     <p className="text-[10px] font-black text-sky-600/60 tracking-[0.2em] uppercase mt-1">{item.titre} {item.prenom} {item.nom}</p>
+                                  </div>
                                   <span className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase border ${item.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100 animate-pulse'}`}>
                                     {item.status === 'active' ? 'En ligne' : 'En attente'}
                                   </span>
@@ -1042,13 +1084,39 @@ const Admin = () => {
                                </div>
                                <div className="flex flex-wrap gap-x-8 gap-y-2 mb-6">
                                   <p className="flex items-center gap-2 text-navy/40 font-bold text-xs"><MapPin className="w-3 h-3" /> {item.lieu}</p>
+                                  {item.adresse && <p className="flex items-center gap-2 text-navy/40 font-bold text-xs"><Navigation className="w-3 h-3" /> {item.adresse}</p>}
                                   <p className="flex items-center gap-2 text-navy/40 font-bold text-xs"><Calendar className="w-3 h-3" /> {item.periode}</p>
                                   <p className="flex items-center gap-2 text-navy/40 font-bold text-xs"><Mail className="w-3 h-3" /> {item.email}</p>
                                </div>
                                <p className="text-navy/60 italic leading-relaxed text-sm bg-sky-50/20 p-4 rounded-2xl">"{item.description}"</p>
                             </div>
                             <div className="flex items-center gap-3">
-                               {item.status !== 'active' && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  className="text-sky-600 hover:bg-sky-50 rounded-2xl h-14 w-14"
+                                  onClick={() => {
+                                    setEditingAnnouncement(item);
+                                    setNewAnnouncement({
+                                      profession: item.profession,
+                                      titre: item.titre || "Dr.",
+                                      nom: item.nom || "",
+                                      prenom: item.prenom || "",
+                                      adresse: item.adresse || "",
+                                      lieu: item.lieu,
+                                      periode: item.periode,
+                                      description: item.description,
+                                      email: item.email,
+                                      phone: item.phone || "",
+                                      urgent: item.urgent,
+                                      status: item.status
+                                    });
+                                    setIsEditAnnouncementOpen(true);
+                                  }}
+                                >
+                                   <Edit className="w-6 h-6" />
+                                </Button>
+                                {item.status !== 'active' && (
                                  <Button 
                                    variant="ghost" 
                                    size="icon"
@@ -1083,6 +1151,121 @@ const Admin = () => {
                         </div>
                       )}
                     </div>
+
+                    {/* Edit Announcement Dialog */}
+                    <Dialog open={isEditAnnouncementOpen} onOpenChange={setIsEditAnnouncementOpen}>
+                      <DialogContent className="rounded-[4rem] border-navy/5 bg-white p-8 max-w-2xl shadow-3xl overflow-y-auto max-h-[90vh]">
+                        <DialogHeader className="mb-8 text-left">
+                          <DialogTitle className="text-3xl font-display font-bold text-navy tracking-tight mb-2">Modifier l'annonce</DialogTitle>
+                          <DialogDescription className="text-sm italic text-navy/40 font-medium">Mettez à jour les détails de cette offre de remplacement.</DialogDescription>
+                        </DialogHeader>
+                        
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                            <div className="space-y-2">
+                               <Label className="text-navy font-black text-[10px] uppercase tracking-widest opacity-40">Civilité</Label>
+                               <Select value={newAnnouncement.titre} onValueChange={(val) => setNewAnnouncement({...newAnnouncement, titre: val})}>
+                                 <SelectTrigger className="rounded-xl border-navy/5 bg-sky-50/30 font-bold text-navy h-12 flex"><SelectValue /></SelectTrigger>
+                                 <SelectContent className="rounded-2xl border-navy/5 bg-white shadow-3xl">
+                                   <SelectItem value="Dr.">Dr.</SelectItem>
+                                   <SelectItem value="Pr.">Pr.</SelectItem>
+                                   <SelectItem value="Mr.">Mr.</SelectItem>
+                                   <SelectItem value="Mme.">Mme.</SelectItem>
+                                 </SelectContent>
+                               </Select>
+                            </div>
+                            <div className="space-y-2">
+                               <Label className="text-navy font-black text-[10px] uppercase tracking-widest opacity-40">Profession</Label>
+                               <Input 
+                                 value={newAnnouncement.profession} 
+                                 onChange={(e) => setNewAnnouncement({...newAnnouncement, profession: e.target.value})}
+                                 className="rounded-xl border-navy/5 bg-sky-50/30 font-bold text-navy h-12 px-4 focus:ring-sky-500/20 flex" 
+                               />
+                            </div>
+                            <div className="space-y-2">
+                               <Label className="text-navy font-black text-[10px] uppercase tracking-widest opacity-40">Prénom</Label>
+                               <Input 
+                                 value={newAnnouncement.prenom} 
+                                 onChange={(e) => setNewAnnouncement({...newAnnouncement, prenom: e.target.value})}
+                                 className="rounded-xl border-navy/5 bg-sky-50/30 font-bold text-navy h-12 px-4 flex" 
+                               />
+                            </div>
+                            <div className="space-y-2">
+                               <Label className="text-navy font-black text-[10px] uppercase tracking-widest opacity-40">Nom</Label>
+                               <Input 
+                                 value={newAnnouncement.nom} 
+                                 onChange={(e) => setNewAnnouncement({...newAnnouncement, nom: e.target.value})}
+                                 className="rounded-xl border-navy/5 bg-sky-50/30 font-bold text-navy h-12 px-4 flex" 
+                               />
+                            </div>
+                            <div className="space-y-2">
+                               <Label className="text-navy font-black text-[10px] uppercase tracking-widest opacity-40">Adresse Précise</Label>
+                               <Input 
+                                 value={newAnnouncement.adresse} 
+                                 onChange={(e) => setNewAnnouncement({...newAnnouncement, adresse: e.target.value})}
+                                 className="rounded-xl border-navy/5 bg-sky-50/30 font-bold text-navy h-12 px-4 flex" 
+                               />
+                            </div>
+                            <div className="space-y-2">
+                               <Label className="text-navy font-black text-[10px] uppercase tracking-widest opacity-40">Lieu (Secteur)</Label>
+                               <Input 
+                                 value={newAnnouncement.lieu} 
+                                 onChange={(e) => setNewAnnouncement({...newAnnouncement, lieu: e.target.value})}
+                                 className="rounded-xl border-navy/5 bg-sky-50/30 font-bold text-navy h-12 px-4 flex" 
+                               />
+                            </div>
+                            <div className="space-y-2">
+                               <Label className="text-navy font-black text-[10px] uppercase tracking-widest opacity-40">Période</Label>
+                               <Input 
+                                 value={newAnnouncement.periode} 
+                                 onChange={(e) => setNewAnnouncement({...newAnnouncement, periode: e.target.value})}
+                                 className="rounded-xl border-navy/5 bg-sky-50/30 font-bold text-navy h-12 px-4 flex" 
+                               />
+                            </div>
+                            <div className="space-y-2">
+                               <Label className="text-navy font-black text-[10px] uppercase tracking-widest opacity-40">Email de contact</Label>
+                               <Input 
+                                 value={newAnnouncement.email} 
+                                 onChange={(e) => setNewAnnouncement({...newAnnouncement, email: e.target.value})}
+                                 className="rounded-xl border-navy/5 bg-sky-50/30 font-bold text-navy h-12 px-4 flex" 
+                               />
+                            </div>
+                            <div className="col-span-1 md:col-span-2 space-y-2">
+                               <Label className="text-navy font-black text-[10px] uppercase tracking-widest opacity-40">Description</Label>
+                               <Textarea 
+                                 value={newAnnouncement.description} 
+                                 onChange={(e) => setNewAnnouncement({...newAnnouncement, description: e.target.value})}
+                                 rows={4}
+                                 className="rounded-xl border-navy/5 bg-sky-50/30 font-bold text-navy p-4 min-h-[100px] flex" 
+                               />
+                            </div>
+                            <div className="flex items-center gap-4 bg-navy/5 p-4 rounded-xl">
+                               <input 
+                                 type="checkbox" 
+                                 id="urgent_edit"
+                                 checked={newAnnouncement.urgent}
+                                 onChange={(e) => setNewAnnouncement({...newAnnouncement, urgent: e.target.checked})}
+                                 className="w-5 h-5 rounded accent-rose-500"
+                               />
+                               <Label htmlFor="urgent_edit" className="text-navy font-bold text-sm tracking-tight cursor-pointer">Marquer comme Urgent</Label>
+                            </div>
+                         </div>
+                        <DialogFooter className="gap-3 mt-8">
+                           <Button variant="ghost" onClick={() => setIsEditAnnouncementOpen(false)} className="rounded-xl px-6 font-bold h-12">Annuler</Button>
+                           <Button 
+                             onClick={() => {
+                               if (editingAnnouncement) {
+                                 announcementUpdateMutation.mutate({ id: editingAnnouncement.id, data: newAnnouncement });
+                               }
+                             }} 
+                             disabled={announcementUpdateMutation.isPending}
+                             className="rounded-xl px-8 bg-sky-600 text-white font-bold hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/20 h-12"
+                           >
+                              {announcementUpdateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                              Sauvegarder
+                           </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                   </TabsContent>
 
                   {/* Messages Management */}
@@ -1094,6 +1277,17 @@ const Admin = () => {
                     <div className="grid gap-6">
                       {loadingMessages ? (
                         <Loader />
+                      ) : errorMessages ? (
+                        <div className="p-20 text-center bg-red-50/50 backdrop-blur-3xl rounded-[3rem] border border-red-200">
+                           <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-6" />
+                           <h4 className="text-navy font-display font-bold text-2xl mb-4">Erreur de chargement</h4>
+                           <p className="text-navy/40 font-medium italic text-lg leading-relaxed max-w-xl mx-auto">
+                              Impossible de récupérer les messages : <strong>{(errorMessages as any).message}</strong>. 
+                           </p>
+                           <p className="text-sky-600 mt-8 font-black text-xs uppercase tracking-widest">
+                              Vérifiez que la table "contacts" existe et que les permissions RLS sont configurées.
+                           </p>
+                        </div>
                       ) : messages && messages.length > 0 ? (
                         messages.map((item) => (
                           <Card

@@ -34,11 +34,14 @@ const Remplacement = () => {
   const [formData, setFormData] = useState({
     type: "Recherche remplaçant",
     profession: "",
+    titre: "Dr.",
     nom: "",
+    prenom: "",
     email: "",
     periode: "",
     description: "",
-    phone: ""
+    phone: "",
+    adresse: ""
   });
 
   const { data: replacements, isLoading } = useQuery({
@@ -260,46 +263,80 @@ const Remplacement = () => {
                         </div>
                       </div>
                       
-                      <div className="grid gap-12 md:grid-cols-2">
+                      <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
                         <div className="space-y-6">
+                          <Label htmlFor="titre" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                            <span className="w-2 h-2 rounded-full bg-sky-500" />
+                            Civilité
+                          </Label>
+                          <Select value={formData.titre} onValueChange={(val) => setFormData({...formData, titre: val})}>
+                            <SelectTrigger className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner border-0"><SelectValue /></SelectTrigger>
+                            <SelectContent className="rounded-[2rem] border-navy/5 shadow-3xl p-3 bg-white/95 backdrop-blur-xl">
+                              <SelectItem value="Dr." className="rounded-[1.2rem] h-14 font-bold text-lg">Dr.</SelectItem>
+                              <SelectItem value="Pr." className="rounded-[1.2rem] h-14 font-bold text-lg">Pr.</SelectItem>
+                              <SelectItem value="Mr." className="rounded-[1.2rem] h-14 font-bold text-lg">Mr.</SelectItem>
+                              <SelectItem value="Mme." className="rounded-[1.2rem] h-14 font-bold text-lg">Mme.</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-6">
+                          <Label htmlFor="prenom" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                            <span className="w-2 h-2 rounded-full bg-sky-500" />
+                            Prénom
+                          </Label>
+                          <Input id="prenom" value={formData.prenom} onChange={(e) => setFormData({...formData, prenom: e.target.value})} placeholder="Jean" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner border-0" />
+                        </div>
+                        <div className="space-y-6 lg:col-span-2">
                           <Label htmlFor="nom" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
                             <span className="w-2 h-2 rounded-full bg-sky-500" />
-                            Votre Identité
+                            Nom de famille
                           </Label>
-                          <Input id="nom" value={formData.nom} onChange={(e) => setFormData({...formData, nom: e.target.value})} placeholder="Ex: Dr. Sarah Martin" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner" />
+                          <Input id="nom" value={formData.nom} onChange={(e) => setFormData({...formData, nom: e.target.value})} placeholder="Dupont" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner border-0" />
                         </div>
+                      </div>
+
+                      <div className="grid gap-12 md:grid-cols-2">
                         <div className="space-y-6">
                           <Label htmlFor="email" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
                             <span className="w-2 h-2 rounded-full bg-sky-500" />
                             Contact Direct (Email)
                           </Label>
-                          <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="sarah.m@medical.fr" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner" />
+                          <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="sarah.m@medical.fr" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner border-0" />
                         </div>
-                      </div>
-
-                      <div className="grid gap-12 md:grid-cols-2">
                         <div className="space-y-6">
                           <Label htmlFor="phone" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
                             <span className="w-2 h-2 rounded-full bg-sky-500" />
                             Téléphone (Optionnel)
                           </Label>
-                          <Input id="phone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="06 XX XX XX XX" className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner" />
-                        </div>
-                        <div className="space-y-6">
-                          <Label htmlFor="lieu" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
-                            <span className="w-2 h-2 rounded-full bg-sky-500" />
-                            Lieu
-                          </Label>
-                          <Input id="lieu" placeholder="Ex: Lyon 3 – Montchat" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner" />
+                          <Input id="phone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="06 XX XX XX XX" className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner border-0" />
                         </div>
                       </div>
 
-                      <div className="space-y-6">
-                        <Label htmlFor="periode" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
-                          <span className="w-2 h-2 rounded-full bg-sky-500" />
-                          Calendrier Prévu
-                        </Label>
-                        <Input id="periode" value={formData.periode} onChange={(e) => setFormData({...formData, periode: e.target.value})} placeholder="Ex: Du 10 au 25 Août – Possible extension" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner" />
+                      <div className="grid gap-12 md:grid-cols-2">
+                        <div className="space-y-6">
+                          <Label htmlFor="adresse" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                            <span className="w-2 h-2 rounded-full bg-sky-500" />
+                            Adresse Précise
+                          </Label>
+                          <Input id="adresse" value={formData.adresse} onChange={(e) => setFormData({...formData, adresse: e.target.value})} placeholder="Rue du Docteur X, Lyon 3" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner border-0" />
+                        </div>
+                      </div>
+
+                      <div className="grid gap-12 md:grid-cols-2">
+                        <div className="space-y-6">
+                          <Label htmlFor="lieu" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                            <span className="w-2 h-2 rounded-full bg-sky-500" />
+                            Lieu (Secteur)
+                          </Label>
+                          <Input id="lieu" placeholder="Ex: Lyon 3 – Montchat" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner border-0" />
+                        </div>
+                        <div className="space-y-6">
+                          <Label htmlFor="periode" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                            <span className="w-2 h-2 rounded-full bg-sky-500" />
+                            Calendrier Prévu
+                          </Label>
+                          <Input id="periode" value={formData.periode} onChange={(e) => setFormData({...formData, periode: e.target.value})} placeholder="Ex: Du 10 au 25 Août – Possible extension" required className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus:ring-sky-500/20 transition-all text-lg px-8 shadow-inner border-0" />
+                        </div>
                       </div>
 
                       <div className="space-y-6">
