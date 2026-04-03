@@ -62,6 +62,10 @@ const Footer = () => {
                 { label: "Actualités", href: "/actualites" },
                 { label: "Ressources", href: "/ressources" },
                 { label: "Remplacement", href: "/remplacement" },
+                { label: "Espace adhérent", href: "/espace-adherent" },
+                { label: "Agenda", href: "/agenda" },
+                { label: "Contact", href: "/contact" },
+                { label: "Admin", href: "/admin" },
               ].map((item) => (
                 <li key={item.href}>
                   <Link to={item.href} className="text-white/40 hover:text-sky-400 font-bold transition-all flex items-center group text-base">

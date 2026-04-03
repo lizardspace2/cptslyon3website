@@ -84,7 +84,7 @@ const Header = () => {
                   </SheetTitle>
                 </SheetHeader>
                 
-                <nav className="flex-1 p-4 flex flex-col gap-1.5 bg-white overflow-hidden">
+                <nav className="flex-1 p-4 flex flex-col gap-1.5 bg-white overflow-y-auto min-h-0">
                   <p className="px-5 py-1 font-black text-[10px] uppercase tracking-[0.5em] text-navy/30 mb-1">Navigation</p>
                   {navItems.map((item) => (
                     <Link
