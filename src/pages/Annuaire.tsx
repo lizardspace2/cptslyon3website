@@ -2,7 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PageBanner from "@/components/PageBanner";
 import { motion } from "framer-motion";
-import { Search, MapPin, Phone, User, ArrowRight, UserCheck, ShieldCheck } from "lucide-react";
+import { Search, MapPin, Phone, User, ArrowRight, UserCheck, ShieldCheck, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,9 +13,14 @@ import { Loader2, AlertCircle } from "lucide-react";
 
 interface Professional {
   id: string;
-  name: string;
+  title?: string;
+  first_name?: string;
+  last_name?: string;
+  name?: string; // Compatibilité
   specialty: string;
-  phone: string;
+  public_phone?: string;
+  private_phone?: string;
+  email?: string;
   address: string;
   description?: string;
   image_url?: string;
@@ -30,7 +35,7 @@ const Annuaire = () => {
       const { data, error } = await supabase
         .from("professionals")
         .select("*")
-        .order("name");
+        .order("last_name");
       
       if (error) throw error;
       return data as Professional[];
@@ -39,7 +44,9 @@ const Annuaire = () => {
 
   const filtered = (professionals || []).filter(
     (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      (p.first_name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (p.last_name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (p.name || "").toLowerCase().includes(search.toLowerCase()) ||
       p.specialty.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -107,21 +114,31 @@ const Annuaire = () => {
                   
                   <div className="flex-1 relative z-10">
                     <div className="flex flex-wrap items-center gap-6 mb-6">
-                      <h3 className="text-3xl font-display font-bold text-navy group-hover:text-sky-600 transition-colors tracking-tight">{pro.name}</h3>
+                      <h3 className="text-3xl font-display font-bold text-navy group-hover:text-sky-600 transition-colors tracking-tight">
+                        {pro.title} {pro.first_name} {pro.last_name || pro.name}
+                      </h3>
                       <div className="flex items-center gap-2 px-6 py-2 rounded-full bg-sky-50 text-sky-700 text-[10px] font-black uppercase tracking-[0.2em] border border-sky-600/10 group-hover:bg-sky-100 transition-colors shadow-sm">
                          <ShieldCheck className="w-3.5 h-3.5" />
                         {pro.specialty}
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-x-12 gap-y-4">
+                    <div className="flex flex-wrap gap-x-12 gap-y-6">
                       <div className="flex items-center gap-4 text-navy/40 font-bold text-sm uppercase tracking-widest italic group-hover:text-navy/60 transition-colors">
                         <MapPin className="w-5 h-5 text-sky-600/50 group-hover:text-sky-600 transition-colors" />
                         {pro.address}
                       </div>
-                      <div className="flex items-center gap-4 text-navy/40 font-bold text-sm uppercase tracking-widest italic group-hover:text-navy/60 transition-colors">
-                        <Phone className="w-5 h-5 text-sky-600/50 group-hover:text-sky-600 transition-colors" />
-                        {pro.phone}
-                      </div>
+                      {pro.public_phone && (
+                        <div className="flex items-center gap-4 text-navy/40 font-bold text-sm uppercase tracking-widest italic group-hover:text-navy/60 transition-colors">
+                          <Phone className="w-5 h-5 text-sky-600/50 group-hover:text-sky-600 transition-colors" />
+                          {pro.public_phone}
+                        </div>
+                      )}
+                      {pro.email && (
+                        <div className="flex items-center gap-4 text-navy/40 font-bold text-sm uppercase tracking-widest italic group-hover:text-navy/60 transition-colors">
+                          <Mail className="w-5 h-5 text-sky-600/50 group-hover:text-sky-600 transition-colors" />
+                          {pro.email}
+                        </div>
+                      )}
                     </div>
                   </div>
                   

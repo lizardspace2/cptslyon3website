@@ -15,16 +15,36 @@ import {
   Edit, 
   Save, 
   X, 
-  Loader2,
-  CheckCircle2,
-  ExternalLink,
-  Calendar
+  Loader2, 
+  CheckCircle2, 
+  ExternalLink, 
+  Calendar, 
+  Search, 
+  MapPin, 
+  Phone, 
+  PhoneForwarded 
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -41,11 +61,17 @@ interface Article {
 
 interface Professional {
   id: string;
-  name: string;
+  title?: string;
+  first_name?: string;
+  last_name?: string;
   specialty: string;
-  phone: string;
+  public_phone?: string;
+  private_phone?: string;
+  email?: string;
   address: string;
 }
+
+const titles = ["Dr.", "Pr.", "Mme.", "M.", "Mlle.", "Me."];
 
 interface Resource {
   id: string;
@@ -67,6 +93,33 @@ const Admin = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [isAddProOpen, setIsAddProOpen] = useState(false);
+  const [newPro, setNewPro] = useState({ 
+    title: "Dr.", 
+    first_name: "", 
+    last_name: "", 
+    specialty: "", 
+    public_phone: "", 
+    private_phone: "", 
+    email: "", 
+    address: "" 
+  });
+  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+
+  const handleAddressSearch = async (query: string) => {
+    setNewPro({ ...newPro, address: query });
+    if (query.length < 3) {
+      setAddressSuggestions([]);
+      return;
+    }
+    try {
+      const response = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5`);
+      const data = await response.json();
+      setAddressSuggestions(data.features || []);
+    } catch (error) {
+      console.error("Error fetching address suggestions:", error);
+    }
+  };
 
   // --- Queries ---
   const { data: news, isLoading: loadingNews } = useQuery({
@@ -122,6 +175,31 @@ const Admin = () => {
   }, [settings]);
 
   // --- Mutations ---
+  const insertProMutation = useMutation({
+    mutationFn: async (pro: Omit<Professional, 'id'>) => {
+      const { error } = await supabase.from("professionals").insert([pro]);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_pros"] });
+      toast({ title: "Ajouté", description: "Le professionnel a été ajouté avec succès." });
+      setIsAddProOpen(false);
+      setNewPro({ 
+        title: "Dr.", 
+        first_name: "", 
+        last_name: "", 
+        specialty: "", 
+        public_phone: "", 
+        private_phone: "", 
+        email: "", 
+        address: "" 
+      });
+    },
+    onError: (error) => {
+      toast({ variant: "destructive", title: "Erreur", description: error.message });
+    }
+  });
+
   const updateSettingMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string, value: string }) => {
       const { error } = await supabase.from("site_settings").update({ value }).eq("key", key);
@@ -237,17 +315,180 @@ const Admin = () => {
 
                    {/* Pros Management */}
                    <TabsContent value="pros" className="mt-0 outline-none">
-                    <SectionHeader title="Gestion de l'Annuaire" description="Gérez la liste des membres professionnels." onAdd={() => {}} />
+                    <SectionHeader 
+                      title="Gestion de l'Annuaire" 
+                      description="Gérez la liste des membres professionnels." 
+                      onAdd={() => setIsAddProOpen(true)} 
+                    />
                     <div className="grid gap-6">
                       {loadingPros ? <Loader /> : pros?.map(item => (
                         <AdminListItem 
                           key={item.id} 
-                          title={item.name} 
+                          title={`${item.title || ''} ${item.first_name || ''} ${item.last_name || item.name || ''}`} 
                           subtitle={item.specialty} 
                           onDelete={() => deleteMutation.mutate({ table: 'professionals', id: item.id })}
                         />
                       ))}
                     </div>
+
+                    <Dialog open={isAddProOpen} onOpenChange={setIsAddProOpen}>
+                      <DialogContent className="rounded-[3rem] border-navy/5 bg-white p-12 max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle className="text-4xl font-display font-bold text-navy tracking-tight">Ajouter un professionnel</DialogTitle>
+                          <DialogDescription className="text-xl italic text-navy/40 mt-4 leading-relaxed">
+                            Remplissez les informations détaillées pour enrichir l'annuaire de la CPTS.
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="grid gap-10 py-12">
+                          {/* Identité */}
+                          <div className="grid gap-6">
+                            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-sky-600 mb-2">Identité & Spécialité</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <div className="grid gap-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Titre</Label>
+                                <Select 
+                                  value={newPro.title} 
+                                  onValueChange={(val) => setNewPro({...newPro, title: val})}
+                                >
+                                  <SelectTrigger className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy focus:ring-sky-500/20">
+                                    <SelectValue placeholder="Titre" />
+                                  </SelectTrigger>
+                                  <SelectContent className="rounded-2xl border-navy/5 shadow-2xl">
+                                    {titles.map(t => <SelectItem key={t} value={t} className="font-bold py-3">{t}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="grid gap-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Prénom</Label>
+                                <Input 
+                                  value={newPro.first_name} 
+                                  onChange={(e) => setNewPro({...newPro, first_name: e.target.value})}
+                                  placeholder="ex: Jean"
+                                  className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy focus-visible:ring-sky-500/20" 
+                                />
+                              </div>
+                              <div className="grid gap-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Nom de famille</Label>
+                                <Input 
+                                  value={newPro.last_name} 
+                                  onChange={(e) => setNewPro({...newPro, last_name: e.target.value})}
+                                  placeholder="ex: DUPONT"
+                                  className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy focus-visible:ring-sky-500/20" 
+                                />
+                              </div>
+                            </div>
+                            <div className="grid gap-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Spécialité / Profession</Label>
+                                <Input 
+                                  value={newPro.specialty} 
+                                  onChange={(e) => setNewPro({...newPro, specialty: e.target.value})}
+                                  placeholder="ex: Médecin Généraliste, Infirmier, etc."
+                                  className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy focus-visible:ring-sky-500/20" 
+                                />
+                            </div>
+                          </div>
+
+                          {/* Coordonnées */}
+                          <div className="grid gap-6">
+                            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-sky-600 mb-2">Coordonnées</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="grid gap-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2 flex items-center gap-2">
+                                  <Phone className="w-3 h-3" /> Téléphone Public
+                                </Label>
+                                <Input 
+                                  value={newPro.public_phone} 
+                                  onChange={(e) => setNewPro({...newPro, public_phone: e.target.value})}
+                                  placeholder="Visible sur le site"
+                                  className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy focus-visible:ring-sky-500/20" 
+                                />
+                              </div>
+                              <div className="grid gap-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2 flex items-center gap-2">
+                                  <PhoneForwarded className="w-3 h-3" /> Téléphone Privé
+                                </Label>
+                                <Input 
+                                  value={newPro.private_phone} 
+                                  onChange={(e) => setNewPro({...newPro, private_phone: e.target.value})}
+                                  placeholder="Réservé aux membres"
+                                  className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy focus-visible:ring-sky-500/20" 
+                                />
+                              </div>
+                            </div>
+                            <div className="grid gap-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2 flex items-center gap-2">
+                                  <Mail className="w-3 h-3" /> Email Professionnel
+                                </Label>
+                                <Input 
+                                  value={newPro.email} 
+                                  onChange={(e) => setNewPro({...newPro, email: e.target.value})}
+                                  placeholder="contact@exemple.fr"
+                                  className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy focus-visible:ring-sky-500/20" 
+                                />
+                            </div>
+                          </div>
+
+                          {/* Localisation */}
+                          <div className="grid gap-6 relative">
+                            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-sky-600 mb-2">Localisation</h4>
+                            <div className="grid gap-3 relative">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2 flex items-center gap-2">
+                                <MapPin className="w-3 h-3" /> Adresse du cabinet (Autocomplétion)
+                              </Label>
+                              <div className="relative">
+                                <Input 
+                                  value={newPro.address} 
+                                  onChange={(e) => handleAddressSearch(e.target.value)}
+                                  placeholder="Saisissez l'adresse..."
+                                  className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy focus-visible:ring-sky-500/20 pr-12" 
+                                />
+                                <Search className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-navy/20" />
+                              </div>
+
+                              {addressSuggestions.length > 0 && (
+                                <Card className="absolute top-full left-0 right-0 z-50 mt-2 rounded-2xl border-navy/5 shadow-2xl bg-white/95 backdrop-blur-xl overflow-hidden p-2">
+                                  {addressSuggestions.map((s, idx) => (
+                                    <button
+                                      key={idx}
+                                      onClick={() => {
+                                        setNewPro({ ...newPro, address: s.properties.label });
+                                        setAddressSuggestions([]);
+                                      }}
+                                      className="w-full text-left p-4 hover:bg-sky-50 rounded-xl transition-all flex items-start gap-4 group"
+                                    >
+                                      <MapPin className="w-5 h-5 text-sky-600 mt-0.5 shrink-0" />
+                                      <div>
+                                        <p className="font-bold text-navy leading-tight">{s.properties.label}</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-navy/20 mt-1">{s.properties.context}</p>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </Card>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <DialogFooter className="gap-6 pt-8 border-t border-navy/5">
+                          <Button 
+                            variant="ghost" 
+                            onClick={() => setIsAddProOpen(false)}
+                            className="h-20 rounded-[2rem] px-10 text-navy/40 font-bold hover:bg-navy/5 text-lg"
+                          >
+                            Annuler
+                          </Button>
+                          <Button 
+                            onClick={() => insertProMutation.mutate(newPro)}
+                            disabled={insertProMutation.isPending}
+                            className="h-20 rounded-[2rem] px-16 bg-navy hover:bg-sky-600 text-white font-display font-bold text-xl shadow-3xl shadow-navy/20 transition-all flex items-center gap-6 active:scale-95"
+                          >
+                            {insertProMutation.isPending ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
+                            Enregistrer le professionnel
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                   </TabsContent>
 
                   {/* Resources Management */}
