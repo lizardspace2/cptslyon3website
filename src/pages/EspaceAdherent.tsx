@@ -127,8 +127,8 @@ const PublicPage = ({ onSignUp, onSignIn }: { onSignUp: any; onSignIn: any }) =>
       await onSignUp(registerForm.email, registerForm.password, {
         title, first_name, last_name, specialty, public_phone, private_phone, address,
       });
-      toast({ title: "Inscription réussie !", description: "Un email de vérification vous a été envoyé. Cliquez sur le lien pour activer votre compte." });
-      setAuthTab("login");
+      toast({ title: "Demande envoyée !", description: "Votre compte a été créé. Il est maintenant en attente de validation par un administrateur." });
+      // No need to setAuthTab("login") because useAuth now logs them in immediately
     } catch (err: any) {
       toast({ variant: "destructive", title: "Erreur", description: err.message });
     } finally {
@@ -232,7 +232,6 @@ const PublicPage = ({ onSignUp, onSignIn }: { onSignUp: any; onSignIn: any }) =>
                       {isSubmitting && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
                       Envoyer ma demande d'adhésion
                     </Button>
-                    <p className="text-center text-navy/30 text-xs font-medium italic">Un email de vérification vous sera envoyé pour confirmer votre adresse.</p>
                   </TabsContent>
                 </Tabs>
               </CardContent>
@@ -339,9 +338,18 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
     setIsSaving(true);
     try {
       await onUpdateProfile(editForm);
-      toast({ title: "Profil mis à jour", description: "Vos modifications ont été enregistrées." });
+      toast({ 
+        title: "Profil mis à jour", 
+        description: "Vos modifications ont été enregistrées avec succès.",
+        className: "bg-emerald-50 border-emerald-200 text-emerald-800 rounded-2xl"
+      });
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Erreur", description: err.message });
+      toast({ 
+        variant: "destructive", 
+        title: "Erreur", 
+        description: err.message,
+        className: "rounded-2xl"
+      });
     } finally {
       setIsSaving(false);
     }

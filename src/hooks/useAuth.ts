@@ -139,6 +139,10 @@ export function useAuth() {
 
     if (memberError) throw memberError;
 
+    // Refresh the state locally to show "Pending" screen immediately
+    const member = await fetchMember(authData.user.id);
+    updateState(authData.user, authData.session, member);
+
     return authData;
   };
 
