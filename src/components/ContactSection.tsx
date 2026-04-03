@@ -12,7 +12,7 @@ const ContactSection = () => {
           className="bg-[#FCE280] rounded-[2rem] p-8 md:p-16 lg:p-20 overflow-hidden"
         >
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-            {/* Left sid text content */}
+            {/* Left side text content */}
             <div className="w-full lg:w-1/2">
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-navy mb-6 leading-tight">
                 Prendre contact avec la<br className="hidden md:block" />
