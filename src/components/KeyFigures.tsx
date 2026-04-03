@@ -3,8 +3,8 @@ import { motion, useInView } from "framer-motion";
 import { Users, MapPin, Briefcase } from "lucide-react";
 
 const figures = [
-  { value: 101838, label: "Habitants couverts", icon: MapPin, color: "text-sky-600", bg: "bg-sky-50" },
-  { value: 680, label: "Professionnels de santé", icon: Briefcase, color: "text-emerald-600", bg: "bg-emerald-50" },
+  { value: 102000, label: "Habitants couverts", icon: MapPin, color: "text-sky-600", bg: "bg-sky-50" },
+  { value: 577, label: "Professionnels de santé", icon: Briefcase, color: "text-emerald-600", bg: "bg-emerald-50" },
   { value: 90, label: "Adhérents", icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
 ];
 

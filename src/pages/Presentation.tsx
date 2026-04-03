@@ -3,6 +3,16 @@ import Footer from "@/components/Footer";
 import PageBanner from "@/components/PageBanner";
 import { motion } from "framer-motion";
 import { Users, Heart, ShieldCheck, Mail, Zap, Target, Star, Globe, ArrowRight } from "lucide-react";
+import HeroSection from "@/components/HeroSection";
+import MissionsSection from "@/components/MissionsSection";
+import NewsSection from "@/components/NewsSection";
+import KeyFigures from "@/components/KeyFigures";
+import FAQSection from "@/components/FAQSection";
+import PartnersSection from "@/components/PartnersSection";
+import NewsletterSection from "@/components/NewsletterSection";
+import TerritorySection from "@/components/TerritorySection";
+import SearchProSection from "@/components/SearchProSection";
+import ContactSection from "@/components/ContactSection";
 
 const Presentation = () => {
   return (
@@ -13,6 +23,10 @@ const Presentation = () => {
           title="Présentation" 
           subtitle="Découvrez notre vision, nos missions et l'équipe qui porte la CPTS Lyon 3."
         />
+
+        <div className="bg-white">
+          <HeroSection />
+        </div>
 
         <section className="py-24 relative overflow-hidden">
           {/* Subtle background decoration */}
@@ -29,7 +43,7 @@ const Presentation = () => {
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-32">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-20">
               {[
                 { title: "Accès aux soins", icon: Users, color: "bg-sky-50 text-sky-600", desc: "Favoriser l'accès à un médecin traitant." },
                 { title: "Parcours de soins", icon: Heart, color: "bg-emerald-50 text-emerald-600", desc: "Fluidifier le lien ville-hôpital." },
@@ -52,6 +66,10 @@ const Presentation = () => {
                 </motion.div>
               ))}
             </div>
+
+            <MissionsSection />
+            <KeyFigures />
+            <TerritorySection />
 
             <div className="text-center mb-20">
               <span className="inline-block px-4 py-1.5 rounded-full bg-navy/5 text-navy/40 font-black text-[10px] uppercase tracking-[0.2em] mb-6 shadow-sm border border-navy/10">
@@ -97,6 +115,13 @@ const Presentation = () => {
             </div>
           </div>
         </section>
+
+        <NewsSection />
+        <PartnersSection />
+        <FAQSection />
+        <SearchProSection />
+        <ContactSection />
+        <NewsletterSection />
 
         <section className="py-24 bg-navy text-white relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(2,132,199,0.1),transparent)] pointer-events-none" />
