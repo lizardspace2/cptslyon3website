@@ -37,6 +37,24 @@ CREATE TABLE public.profiles (
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
+create table public.professionals (
+  id uuid not null default gen_random_uuid (),
+  name text null,
+  specialty text not null,
+  phone text null,
+  address text null,
+  description text null,
+  image_url text null,
+  created_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  title text null,
+  first_name text null,
+  last_name text null,
+  public_phone text null,
+  private_phone text null,
+  email text null,
+  photo_url text null,
+  constraint professionals_pkey primary key (id)
+) TABLESPACE pg_default;
 
 CREATE TABLE public.replacements (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
