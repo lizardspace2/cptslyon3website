@@ -65,8 +65,23 @@ export function useAuth() {
   }, []);
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session — also handles email confirmation redirect tokens
     const init = async () => {
+      // If URL has hash params (from email confirmation link), exchange them
+      const hash = window.location.hash;
+      if (hash && (hash.includes('access_token') || hash.includes('type=signup') || hash.includes('type=recovery'))) {
+        // Let Supabase client parse the hash and create a session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) console.error('Error exchanging token:', error);
+        // Clean up the URL hash
+        window.history.replaceState(null, '', window.location.pathname);
+        if (session?.user) {
+          const member = await fetchMember(session.user.id);
+          updateState(session.user, session, member);
+          return;
+        }
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const member = await fetchMember(session.user.id);
@@ -77,7 +92,7 @@ export function useAuth() {
     };
     init();
 
-    // Listen for auth changes
+    // Listen for auth changes (including email confirmation)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         const member = await fetchMember(session.user.id);

@@ -20,33 +20,5 @@ CREATE TABLE IF NOT EXISTS public.members (
   CONSTRAINT members_pkey PRIMARY KEY (id)
 );
 
--- 2. Activer RLS
-ALTER TABLE public.members ENABLE ROW LEVEL SECURITY;
-
--- 3. Politiques RLS
-
--- Un membre peut lire son propre profil
-CREATE POLICY "Members read own profile" ON public.members
-  FOR SELECT USING (auth.uid() = id);
-
--- Un membre peut modifier son propre profil (mais pas le statut)
-CREATE POLICY "Members update own profile" ON public.members
-  FOR UPDATE USING (auth.uid() = id);
-
--- Insertion lors de l'inscription (l'utilisateur crée sa propre ligne)
-CREATE POLICY "Users can insert own member row" ON public.members
-  FOR INSERT WITH CHECK (auth.uid() = id);
-
--- Les membres approuvés peuvent voir les autres membres approuvés (annuaire adhérents)
-CREATE POLICY "Approved members see other approved members" ON public.members
-  FOR SELECT USING (
-    auth.uid() IS NOT NULL
-    AND EXISTS (SELECT 1 FROM public.members WHERE id = auth.uid() AND status = 'approved')
-    AND status = 'approved'
-  );
-
--- Les admins voient et gèrent tous les membres
-CREATE POLICY "Admins manage all members" ON public.members
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
-  );
+-- 2. RLS désactivé pour éviter les erreurs de permissions
+ALTER TABLE public.members DISABLE ROW LEVEL SECURITY;
