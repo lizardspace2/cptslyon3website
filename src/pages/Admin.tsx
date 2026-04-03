@@ -144,7 +144,7 @@ const Admin = () => {
   const [newResource, setNewResource] = useState({
     title: "",
     description: "",
-    type: "lien",
+    type: "guide",
     url: "",
   });
 
@@ -906,15 +906,24 @@ const Admin = () => {
                                       <SelectValue placeholder="Type" />
                                    </SelectTrigger>
                                    <SelectContent>
-                                      {["lien", "pdf", "image", "doc"].map(t => (
-                                        <SelectItem key={t} value={t}>{t.toUpperCase()}</SelectItem>
+                                      {[
+                                         { id: "guide", label: "GUIDE" },
+                                         { id: "protocole", label: "PROTOCOLE" },
+                                         { id: "outil", label: "OUTIL" },
+                                         { id: "webinaire", label: "WEBINAIRE" },
+                                         { id: "lien", label: "LIEN UTILE" }
+                                       ].map(t => (
+                                        <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
                                       ))}
                                    </SelectContent>
                                 </Select>
                               </div>
                            </div>
                            <div className="grid gap-3">
-                             <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Fichier de la ressource (PDF, Image...)</Label>
+                             <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2 flex justify-between">
+                               <span>Fichier de la ressource (PDF, Image...)</span>
+                               <span className="text-sky-600 lowercase italic">Nécessite le bucket "documents" dans Supabase</span>
+                             </Label>
                              <div className="relative group/upload h-16 w-full mb-2">
                                 <input 
                                   type="file" 
