@@ -190,11 +190,21 @@ const PublicPage = ({ onSignUp, onSignIn }: { onSignUp: any; onSignIn: any }) =>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className={labelCls}>Mot de passe *</Label>
-                        <Input value={registerForm.password} onChange={(e) => setRegisterForm({...registerForm, password: e.target.value})} type="password" placeholder="Min. 6 caractères" className={inputCls} />
+                        <div className="relative">
+                          <Input value={registerForm.password} onChange={(e) => setRegisterForm({...registerForm, password: e.target.value})} type={showPassword ? "text" : "password"} placeholder="Min. 6 caractères" className={inputCls + " pr-12"} />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-navy/30 hover:text-navy/60 transition-colors">
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label className={labelCls}>Confirmer *</Label>
-                        <Input value={registerForm.confirmPassword} onChange={(e) => setRegisterForm({...registerForm, confirmPassword: e.target.value})} type="password" placeholder="Confirmez" className={inputCls} />
+                        <div className="relative">
+                          <Input value={registerForm.confirmPassword} onChange={(e) => setRegisterForm({...registerForm, confirmPassword: e.target.value})} type={showPassword ? "text" : "password"} placeholder="Confirmez" className={inputCls + " pr-12"} />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-navy/30 hover:text-navy/60 transition-colors">
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                        </div>
                       </div>
                     </div>
 
