@@ -12,11 +12,23 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 
 import { supabase } from "@/lib/supabase";
+import { useQuery } from "@tanstack/react-query";
 
 const Contact = () => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+   const [isSubmitting, setIsSubmitting] = useState(false);
+
+   const { data: settings } = useQuery({
+     queryKey: ["site_settings"],
+     queryFn: async () => {
+       const { data, error } = await supabase.from("site_settings").select("*");
+       if (error) throw error;
+       return data;
+     }
+   });
+
+   const contactPhone = settings?.find((s: any) => s.key === "contact_phone")?.value || "07 45 28 16 26";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,7 +101,7 @@ const Contact = () => {
                   {[
                     { icon: Mail, title: "Courriel Officiel", value: "cptslyon3@gmail.com", href: "mailto:cptslyon3@gmail.com", color: "sky" },
                     { icon: MapPin, title: "Siège Administratif", value: "24 rue Barrier, 69006 Lyon", href: "#", color: "navy" },
-                    { icon: Phone, title: "Ligne de Coordination", value: "07 45 28 16 26", href: "tel:0745281626", color: "emerald" }
+                    { icon: Phone, title: "Ligne de Coordination", value: contactPhone, href: `tel:${contactPhone.replace(/\s/g, '')}`, color: "emerald" }
                   ].map((item, i) => (
                     <motion.div 
                       key={i}

@@ -22,7 +22,9 @@ import {
   Search, 
   MapPin, 
   Phone, 
-  PhoneForwarded 
+  PhoneForwarded,
+  Upload,
+  Image as ImageIcon
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -79,6 +81,7 @@ interface Professional {
   private_phone?: string;
   email?: string;
   address: string;
+  photo_url?: string;
 }
 
 const titles = ["Dr.", "Pr.", "Mme.", "M.", "Mlle.", "Me."];
@@ -116,7 +119,8 @@ const Admin = () => {
     public_phone: "", 
     private_phone: "", 
     email: "", 
-    address: "" 
+    address: "",
+    photo_url: ""
   });
 
   // News
@@ -143,7 +147,39 @@ const Admin = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ table: string, id: string } | null>(null);
 
+  const [isUploading, setIsUploading] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+  const [contactPhoneInput, setContactPhoneInput] = useState("");
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, bucket: string, folder: string = "general") => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}-${Date.now()}.${fileExt}`;
+      const filePath = `${folder}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
+
+      toast({ title: "Fichier chargé", description: "Le fichier a été téléchargé avec succès." });
+      return publicUrl;
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Erreur d'upload", description: error.message });
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleAddressSearch = async (query: string) => {
     setNewPro({ ...newPro, address: query });
@@ -211,6 +247,9 @@ const Admin = () => {
   useEffect(() => {
     const calendarSetting = settings?.find((s: any) => s.key === "google_calendar_url");
     if (calendarSetting) setCalendarUrlInput(calendarSetting.value);
+    
+    const phoneSetting = settings?.find((s: any) => s.key === "contact_phone");
+    if (phoneSetting) setContactPhoneInput(phoneSetting.value);
   }, [settings]);
 
   // --- Mutations ---
@@ -230,7 +269,7 @@ const Admin = () => {
       toast({ title: editingPro ? "Mis à jour" : "Ajouté", description: `Le professionnel a été ${editingPro ? "modifié" : "ajouté"} avec succès.` });
       setIsAddProOpen(false);
       setEditingPro(null);
-      setNewPro({ title: "Dr.", first_name: "", last_name: "", specialty: "", public_phone: "", private_phone: "", email: "", address: "" });
+      setNewPro({ title: "Dr.", first_name: "", last_name: "", specialty: "", public_phone: "", private_phone: "", email: "", address: "", photo_url: "" });
     },
     onError: (error) => toast({ variant: "destructive", title: "Erreur", description: error.message })
   });
@@ -442,12 +481,41 @@ const Admin = () => {
                                 </Select>
                              </div>
                              <div className="grid gap-3">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">URL de l'image (Unsplash...)</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Image de couverture</Label>
+                                <div className="relative group/upload h-16 w-full">
+                                   <input 
+                                     type="file" 
+                                     accept="image/*"
+                                     onChange={async (e) => {
+                                       const url = await handleFileUpload(e, "news", "news-images");
+                                       if (url) setNewNews({ ...newNews, image_url: url });
+                                     }}
+                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                     disabled={isUploading}
+                                   />
+                                   <div className={`h-16 w-full rounded-2xl border-2 border-dashed border-navy/5 bg-sky-50/30 flex items-center justify-between px-6 transition-all group-hover/upload:border-sky-600/30 ${isUploading ? 'opacity-50' : ''}`}>
+                                      <div className="flex items-center gap-4">
+                                         {isUploading ? (
+                                           <Loader2 className="w-5 h-5 animate-spin text-sky-600" />
+                                         ) : (
+                                           <Upload className="w-5 h-5 text-sky-600" />
+                                         )}
+                                         <span className="font-bold text-navy/40 truncate max-w-[200px]">
+                                            {newNews.image_url ? "Image sélectionnée" : "Sélectionner un fichier"}
+                                         </span>
+                                      </div>
+                                      {newNews.image_url && (
+                                        <div className="w-12 h-10 rounded-lg overflow-hidden border border-white shadow-sm shrink-0 bg-white">
+                                          <img src={newNews.image_url} alt="Aperçu" className="w-full h-full object-cover" />
+                                        </div>
+                                      )}
+                                   </div>
+                                </div>
                                 <Input 
                                   value={newNews.image_url} 
                                   onChange={(e) => setNewNews({...newNews, image_url: e.target.value})}
-                                  placeholder="https://images.unsplash.com/..."
-                                  className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy" 
+                                  placeholder="Ou collez une URL ici..."
+                                  className="h-12 rounded-xl border-navy/5 bg-sky-50/10 font-bold text-navy mt-2 text-xs" 
                                 />
                              </div>
                           </div>
@@ -462,13 +530,12 @@ const Admin = () => {
                           </div>
                         </div>
                         <DialogFooter className="gap-4">
-                           <Button variant="ghost" onClick={() => setIsAddNewsOpen(false)} className="h-16 rounded-2xl px-10 font-bold">Annuler</Button>
                            <Button 
                              onClick={() => newsMutation.mutate(newNews)} 
-                             disabled={newsMutation.isPending}
-                             className="h-16 rounded-2xl px-12 bg-navy text-white font-bold"
+                             disabled={newsMutation.isPending || isUploading}
+                             className="h-16 rounded-2xl px-12 bg-navy text-white font-bold disabled:opacity-50 transition-all hover:bg-sky-600"
                            >
-                              {newsMutation.isPending && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
+                              {(newsMutation.isPending || isUploading) && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
                               Enregistrer l'article
                            </Button>
                         </DialogFooter>
@@ -483,7 +550,7 @@ const Admin = () => {
                       description="Gérez la liste des membres professionnels." 
                       onAdd={() => {
                         setEditingPro(null);
-                        setNewPro({ title: "Dr.", first_name: "", last_name: "", specialty: "", public_phone: "", private_phone: "", email: "", address: "" });
+                        setNewPro({ title: "Dr.", first_name: "", last_name: "", specialty: "", public_phone: "", private_phone: "", email: "", address: "", photo_url: "" });
                         setIsAddProOpen(true);
                       }} 
                     />
@@ -504,6 +571,7 @@ const Admin = () => {
                               private_phone: item.private_phone || "",
                               email: item.email || "",
                               address: item.address || "",
+                              photo_url: item.photo_url || "",
                             });
                             setIsAddProOpen(true);
                           }}
@@ -613,45 +681,77 @@ const Admin = () => {
                             </div>
                           </div>
 
-                          {/* Localisation */}
-                          <div className="grid gap-6 relative">
-                            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-sky-600 mb-2">Localisation</h4>
-                            <div className="grid gap-3 relative">
-                              <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2 flex items-center gap-2">
-                                <MapPin className="w-3 h-3" /> Adresse du cabinet (Autocomplétion)
-                              </Label>
-                              <div className="relative">
-                                <Input 
-                                  value={newPro.address} 
-                                  onChange={(e) => handleAddressSearch(e.target.value)}
-                                  placeholder="Saisissez l'adresse..."
-                                  className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy focus-visible:ring-sky-500/20 pr-12" 
-                                />
-                                <Search className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-navy/20" />
-                              </div>
+                            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-sky-600 mb-2">Localisation & Photo</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                               <div className="grid gap-3 relative">
+                                 <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2 flex items-center gap-2">
+                                   <MapPin className="w-3 h-3" /> Adresse du cabinet (Autocomplétion)
+                                 </Label>
+                                 <div className="relative">
+                                   <Input 
+                                     value={newPro.address} 
+                                     onChange={(e) => handleAddressSearch(e.target.value)}
+                                     placeholder="Saisissez l'adresse..."
+                                     className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy focus-visible:ring-sky-500/20 pr-12" 
+                                   />
+                                   <Search className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-navy/20" />
+                                 </div>
 
-                              {addressSuggestions.length > 0 && (
-                                <Card className="absolute top-full left-0 right-0 z-50 mt-2 rounded-2xl border-navy/5 shadow-2xl bg-white/95 backdrop-blur-xl overflow-hidden p-2">
-                                  {addressSuggestions.map((s, idx) => (
-                                    <button
-                                      key={idx}
-                                      onClick={() => {
-                                        setNewPro({ ...newPro, address: s.properties.label });
-                                        setAddressSuggestions([]);
+                                 {addressSuggestions.length > 0 && (
+                                   <Card className="absolute top-full left-0 right-0 z-50 mt-2 rounded-2xl border-navy/5 shadow-2xl bg-white/95 backdrop-blur-xl overflow-hidden p-2">
+                                     {addressSuggestions.map((s, idx) => (
+                                       <button
+                                         key={idx}
+                                         onClick={() => {
+                                           setNewPro({ ...newPro, address: s.properties.label });
+                                           setAddressSuggestions([]);
+                                         }}
+                                         className="w-full text-left p-4 hover:bg-sky-50 rounded-xl transition-all flex items-start gap-4 group"
+                                       >
+                                         <MapPin className="w-5 h-5 text-sky-600 mt-0.5 shrink-0" />
+                                         <div>
+                                           <p className="font-bold text-navy leading-tight">{s.properties.label}</p>
+                                           <p className="text-[10px] font-black uppercase tracking-widest text-navy/20 mt-1">{s.properties.context}</p>
+                                         </div>
+                                       </button>
+                                     ))}
+                                   </Card>
+                                 )}
+                               </div>
+
+                               <div className="grid gap-3">
+                                 <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Photo de profil</Label>
+                                 <div className="relative group/upload h-16 w-full">
+                                    <input 
+                                      type="file" 
+                                      accept="image/*"
+                                      onChange={async (e) => {
+                                        const url = await handleFileUpload(e, "annuaire", "pros");
+                                        if (url) setNewPro({ ...newPro, photo_url: url });
                                       }}
-                                      className="w-full text-left p-4 hover:bg-sky-50 rounded-xl transition-all flex items-start gap-4 group"
-                                    >
-                                      <MapPin className="w-5 h-5 text-sky-600 mt-0.5 shrink-0" />
-                                      <div>
-                                        <p className="font-bold text-navy leading-tight">{s.properties.label}</p>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-navy/20 mt-1">{s.properties.context}</p>
-                                      </div>
-                                    </button>
-                                  ))}
-                                </Card>
-                              )}
+                                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                      disabled={isUploading}
+                                    />
+                                    <div className={`h-16 w-full rounded-2xl border-2 border-dashed border-navy/5 bg-sky-50/30 flex items-center justify-between px-6 transition-all group-hover/upload:border-sky-600/30 ${isUploading ? 'opacity-50' : ''}`}>
+                                       <div className="flex items-center gap-4">
+                                          {isUploading ? (
+                                            <Loader2 className="w-5 h-5 animate-spin text-sky-600" />
+                                          ) : (
+                                            <Upload className="w-5 h-5 text-sky-600" />
+                                          )}
+                                          <span className="font-bold text-navy/40 truncate max-w-[150px]">
+                                             {newPro.photo_url ? "Photo prête" : "Uploader"}
+                                          </span>
+                                       </div>
+                                       {newPro.photo_url && (
+                                         <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0">
+                                           <img src={newPro.photo_url} alt="Aperçu" className="w-full h-full object-cover" />
+                                         </div>
+                                       )}
+                                    </div>
+                                 </div>
+                               </div>
                             </div>
-                          </div>
                         </div>
 
                         <DialogFooter className="gap-6 pt-8 border-t border-navy/5">
@@ -741,12 +841,35 @@ const Admin = () => {
                               </div>
                            </div>
                            <div className="grid gap-3">
-                             <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">URL de la ressource</Label>
+                             <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Fichier de la ressource (PDF, Image...)</Label>
+                             <div className="relative group/upload h-16 w-full mb-2">
+                                <input 
+                                  type="file" 
+                                  onChange={async (e) => {
+                                    const url = await handleFileUpload(e, "documents", "resources");
+                                    if (url) setNewResource({ ...newResource, url: url });
+                                  }}
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                  disabled={isUploading}
+                                />
+                                <div className={`h-16 w-full rounded-2xl border-2 border-dashed border-navy/5 bg-sky-50/30 flex items-center justify-between px-6 transition-all group-hover/upload:border-sky-600/30 ${isUploading ? 'opacity-50' : ''}`}>
+                                   <div className="flex items-center gap-4">
+                                      {isUploading ? (
+                                        <Loader2 className="w-5 h-5 animate-spin text-sky-600" />
+                                      ) : (
+                                        <FileText className="w-5 h-5 text-sky-600" />
+                                      )}
+                                      <span className="font-bold text-navy/40 truncate max-w-[250px]">
+                                         {newResource.url ? "Fichier sélectionné" : "Choisir un fichier"}
+                                      </span>
+                                   </div>
+                                </div>
+                             </div>
                              <Input 
                                value={newResource.url} 
                                onChange={(e) => setNewResource({...newResource, url: e.target.value})}
-                               placeholder="https://..."
-                               className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy" 
+                               placeholder="Ou URL externe (si lien)..."
+                               className="h-12 rounded-xl border-navy/5 bg-sky-50/10 font-bold text-navy text-xs px-6" 
                              />
                            </div>
                            <div className="grid gap-3">
@@ -781,31 +904,45 @@ const Admin = () => {
                       <p className="text-navy/40 font-medium italic text-lg leading-relaxed">Consultez les demandes de contact envoyées via le site.</p>
                     </div>
                     <div className="grid gap-6">
-                      {loadingMessages ? <Loader /> : messages?.map(item => (
-                        <Card key={item.id} className="rounded-[2.5rem] border border-navy/5 shadow-2xl bg-white overflow-hidden p-8 hover:border-sky-600/30 transition-all duration-500">
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                            <div className="flex-1">
-                               <div className="flex items-center gap-4 mb-4">
+                      {loadingMessages ? (
+                        <Loader />
+                      ) : messages && messages.length > 0 ? (
+                        messages.map((item) => (
+                          <Card
+                            key={item.id}
+                            className="rounded-[2.5rem] border border-navy/5 shadow-2xl bg-white overflow-hidden p-8 hover:border-sky-600/30 transition-all duration-500"
+                          >
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-4 mb-4">
                                   <h3 className="text-xl font-display font-bold text-navy tracking-tight">{item.name}</h3>
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-navy/20">{new Date(item.created_at).toLocaleDateString()}</span>
-                               </div>
-                               <p className="text-sky-600/60 font-bold mb-4">{item.email}</p>
-                               <p className="text-navy/60 italic leading-relaxed">"{item.message}"</p>
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-navy/20">
+                                    {new Date(item.created_at).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <p className="text-sky-600/60 font-bold mb-4">{item.email}</p>
+                                <p className="text-navy/60 italic leading-relaxed">"{item.message}"</p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl h-14 w-14 shrink-0 transition-all"
+                                onClick={() => {
+                                  setItemToDelete({ table: "contacts", id: item.id });
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 className="w-6 h-6" />
+                              </Button>
                             </div>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl h-14 w-14 shrink-0 transition-all"
-                              onClick={() => {
-                                setItemToDelete({ table: 'contacts', id: item.id });
-                                setIsDeleteDialogOpen(true);
-                              }}
-                            >
-                               <Trash2 className="w-6 h-6" />
-                            </Button>
-                          </div>
-                        </Card>
-                      ))}
+                          </Card>
+                        ))
+                      ) : (
+                        <div className="p-20 text-center bg-white/40 backdrop-blur-3xl rounded-[3rem] border border-navy/5">
+                          <Mail className="w-16 h-16 text-navy/10 mx-auto mb-6" />
+                          <p className="text-xl font-bold text-navy/20 italic">Aucun message pour le moment.</p>
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
 
@@ -816,32 +953,63 @@ const Admin = () => {
                       <p className="text-navy/40 font-medium italic text-lg leading-relaxed">Configurez les éléments structurels de votre site.</p>
                     </div>
                     <div className="grid gap-8">
-                       <Card className="rounded-[3rem] border border-navy/5 shadow-3xl bg-white p-10">
-                          <div className="flex flex-col gap-8">
-                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center">
-                                   <Calendar className="w-6 h-6" />
-                                </div>
-                                <h3 className="text-xl font-display font-bold text-navy tracking-tight">URL Google Agenda</h3>
-                             </div>
-                             <div className="flex gap-4">
-                                <Input 
-                                   value={calendarUrlInput} 
-                                   onChange={(e) => setCalendarUrlInput(e.target.value)}
-                                   placeholder="URL d'intégration Google Calendar..."
-                                   className="h-16 rounded-2xl border-navy/10 bg-sky-50/20 font-bold text-navy focus-visible:ring-sky-500/20"
-                                />
-                                <Button 
-                                  onClick={() => updateSettingMutation.mutate({ key: "google_calendar_url", value: calendarUrlInput })}
-                                  disabled={updateSettingMutation.isPending}
-                                  className="h-16 rounded-2xl px-8 bg-navy hover:bg-sky-600 text-white font-bold transition-all shadow-xl disabled:opacity-50"
-                                >
-                                   {updateSettingMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
-                                   Enregistrer
-                                </Button>
-                             </div>
-                          </div>
-                       </Card>
+                        <Card className="rounded-[3rem] border border-navy/5 shadow-3xl bg-white p-10">
+                           <div className="flex flex-col gap-12">
+                              {/* Calendar URL */}
+                              <div className="flex flex-col gap-6">
+                                 <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center">
+                                       <Calendar className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="text-xl font-display font-bold text-navy tracking-tight">URL Google Agenda</h3>
+                                 </div>
+                                 <div className="flex gap-4">
+                                    <Input 
+                                       value={calendarUrlInput} 
+                                       onChange={(e) => setCalendarUrlInput(e.target.value)}
+                                       placeholder="URL d'intégration Google Calendar..."
+                                       className="h-16 rounded-2xl border-navy/10 bg-sky-50/20 font-bold text-navy focus-visible:ring-sky-500/20"
+                                    />
+                                    <Button 
+                                      onClick={() => updateSettingMutation.mutate({ key: "google_calendar_url", value: calendarUrlInput })}
+                                      disabled={updateSettingMutation.isPending}
+                                      className="h-16 rounded-[1.2rem] px-8 bg-navy hover:bg-sky-600 text-white font-bold transition-all shadow-xl disabled:opacity-50"
+                                    >
+                                       {updateSettingMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5 mr-4" />}
+                                       Enregistrer
+                                    </Button>
+                                 </div>
+                              </div>
+                              
+                              <div className="w-full h-px bg-navy/5" />
+
+                              {/* Contact Phone */}
+                              <div className="flex flex-col gap-6">
+                                 <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                       <Phone className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="text-xl font-display font-bold text-navy tracking-tight">Téléphone de Contact</h3>
+                                 </div>
+                                 <div className="flex gap-4">
+                                    <Input 
+                                       value={contactPhoneInput} 
+                                       onChange={(e) => setContactPhoneInput(e.target.value)}
+                                       placeholder="ex : 07 45 28 16 26"
+                                       className="h-16 rounded-2xl border-navy/10 bg-sky-50/20 font-bold text-navy focus-visible:ring-sky-500/20"
+                                    />
+                                    <Button 
+                                      onClick={() => updateSettingMutation.mutate({ key: "contact_phone", value: contactPhoneInput })}
+                                      disabled={updateSettingMutation.isPending}
+                                      className="h-16 rounded-[1.2rem] px-8 bg-navy hover:bg-sky-600 text-white font-bold transition-all shadow-xl disabled:opacity-50"
+                                    >
+                                       {updateSettingMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5 mr-4" />}
+                                       Enregistrer
+                                    </Button>
+                                 </div>
+                              </div>
+                           </div>
+                        </Card>
                     </div>
                   </TabsContent>
                 </div>

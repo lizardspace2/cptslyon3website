@@ -1,8 +1,21 @@
 import { Link } from "react-router-dom";
 import { Mail, MapPin, Phone, Facebook, Twitter, Instagram, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
+import { useQuery } from "@tanstack/react-query";
 
 const Footer = () => {
+  const { data: settings } = useQuery({
+    queryKey: ["site_settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("site_settings").select("*");
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const contactPhone = settings?.find((s: any) => s.key === "contact_phone")?.value || "07 45 28 16 26";
+  const contactEmail = "cptslyon3@gmail.com"; 
   return (
     <footer className="bg-[#0F1C2E] text-white relative overflow-hidden border-t border-white/5">
       {/* Sophisticated decorative backgrounds */}
@@ -72,8 +85,19 @@ const Footer = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Email</span>
-                  <a href="mailto:cptslyon3@gmail.com" className="text-white/60 hover:text-white font-bold transition-colors">
-                    cptslyon3@gmail.com
+                  <a href={`mailto:${contactEmail}`} className="text-white/60 hover:text-white font-bold transition-colors">
+                    {contactEmail}
+                  </a>
+                </div>
+              </li>
+              <li className="flex items-start gap-4 group">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 border border-white/5 group-hover:bg-sky-500/10 group-hover:border-sky-500/20 transition-all duration-500">
+                  <Phone className="w-5 h-5 text-sky-400" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Téléphone</span>
+                  <a href={`tel:${contactPhone.replace(/\s/g, '')}`} className="text-white/60 hover:text-white font-bold transition-colors">
+                    {contactPhone}
                   </a>
                 </div>
               </li>

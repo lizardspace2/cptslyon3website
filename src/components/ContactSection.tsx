@@ -1,7 +1,21 @@
 import { Mail, MapPin, Phone, ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabase";
+import { useQuery } from "@tanstack/react-query";
 
 const ContactSection = () => {
+  const { data: settings } = useQuery({
+    queryKey: ["site_settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("site_settings").select("*");
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const contactPhone = settings?.find((s: any) => s.key === "contact_phone")?.value || "07 45 28 16 26";
+  const contactEmail = "cptslyon3@gmail.com";
+
   return (
     <section className="py-20 md:py-28">
       <div className="container">
@@ -39,18 +53,18 @@ const ContactSection = () => {
                     <MapPin className="w-5 h-5 text-sky-600 shrink-0" strokeWidth={2} />
                     <span>24 rue Barrier, 69006 Lyon</span>
                   </div>
-                  <a href="mailto:cptslyon3@gmail.com" className="flex items-center gap-4 hover:text-sky-600 transition-colors">
+                  <a href={`mailto:${contactEmail}`} className="flex items-center gap-4 hover:text-sky-600 transition-colors">
                     <Mail className="w-5 h-5 text-sky-600 shrink-0" strokeWidth={2} />
-                    <span>cptslyon3@gmail.com</span>
+                    <span>{contactEmail}</span>
                   </a>
-                  <a href="tel:0745281626" className="flex items-center gap-4 hover:text-sky-600 transition-colors">
+                  <a href={`tel:${contactPhone.replace(/\s/g, '')}`} className="flex items-center gap-4 hover:text-sky-600 transition-colors">
                     <Phone className="w-5 h-5 text-sky-600 shrink-0" strokeWidth={2} />
-                    <span>07 45 28 16 26</span>
+                    <span>{contactPhone}</span>
                   </a>
                 </div>
 
                 <a 
-                  href="mailto:cptslyon3@gmail.com"
+                  href={`mailto:${contactEmail}`}
                   className="mt-10 inline-flex items-center justify-center gap-2 bg-[#FFB938] hover:bg-[#F2A922] text-navy font-semibold px-8 py-4 rounded-full transition-colors w-full sm:w-auto"
                 >
                   <ArrowUpRight className="w-5 h-5" />
