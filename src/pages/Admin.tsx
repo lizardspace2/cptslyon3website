@@ -45,6 +45,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -92,8 +102,12 @@ interface Message {
 const Admin = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  // --- States ---
   const [activeTab, setActiveTab] = useState("dashboard");
+  
+  // Professionals
   const [isAddProOpen, setIsAddProOpen] = useState(false);
+  const [editingPro, setEditingPro] = useState<Professional | null>(null);
   const [newPro, setNewPro] = useState({ 
     title: "Dr.", 
     first_name: "", 
@@ -104,6 +118,31 @@ const Admin = () => {
     email: "", 
     address: "" 
   });
+
+  // News
+  const [isAddNewsOpen, setIsAddNewsOpen] = useState(false);
+  const [editingNews, setEditingNews] = useState<Article | null>(null);
+  const [newNews, setNewNews] = useState({
+    title: "",
+    excerpt: "",
+    category: "Santé",
+    image_url: "",
+  });
+
+  // Resources
+  const [isAddResourceOpen, setIsAddResourceOpen] = useState(false);
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [newResource, setNewResource] = useState({
+    title: "",
+    description: "",
+    type: "lien",
+    url: "",
+  });
+
+  // Global Delete Security
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{ table: string, id: string } | null>(null);
+
   const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
 
   const handleAddressSearch = async (query: string) => {
@@ -134,7 +173,7 @@ const Admin = () => {
   const { data: pros, isLoading: loadingPros } = useQuery({
     queryKey: ["admin_pros"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("professionals").select("*").order("name");
+      const { data, error } = await supabase.from("professionals").select("*").order("last_name");
       if (error) throw error;
       return data as Professional[];
     }
@@ -175,29 +214,67 @@ const Admin = () => {
   }, [settings]);
 
   // --- Mutations ---
-  const insertProMutation = useMutation({
-    mutationFn: async (pro: Omit<Professional, 'id'>) => {
-      const { error } = await supabase.from("professionals").insert([pro]);
-      if (error) throw error;
+  // Professionals Mutation
+  const proMutation = useMutation({
+    mutationFn: async (pro: any) => {
+      if (editingPro) {
+        const { error } = await supabase.from("professionals").update(pro).eq("id", editingPro.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("professionals").insert([pro]);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin_pros"] });
-      toast({ title: "Ajouté", description: "Le professionnel a été ajouté avec succès." });
+      toast({ title: editingPro ? "Mis à jour" : "Ajouté", description: `Le professionnel a été ${editingPro ? "modifié" : "ajouté"} avec succès.` });
       setIsAddProOpen(false);
-      setNewPro({ 
-        title: "Dr.", 
-        first_name: "", 
-        last_name: "", 
-        specialty: "", 
-        public_phone: "", 
-        private_phone: "", 
-        email: "", 
-        address: "" 
-      });
+      setEditingPro(null);
+      setNewPro({ title: "Dr.", first_name: "", last_name: "", specialty: "", public_phone: "", private_phone: "", email: "", address: "" });
     },
-    onError: (error) => {
-      toast({ variant: "destructive", title: "Erreur", description: error.message });
-    }
+    onError: (error) => toast({ variant: "destructive", title: "Erreur", description: error.message })
+  });
+
+  // News Mutation
+  const newsMutation = useMutation({
+    mutationFn: async (article: any) => {
+      if (editingNews) {
+        const { error } = await supabase.from("news").update(article).eq("id", editingNews.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("news").insert([{ ...article, published_at: new Date().toISOString() }]);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_news"] });
+      toast({ title: editingNews ? "Mis à jour" : "Ajouté", description: `L'article a été ${editingNews ? "modifié" : "ajouté"} avec succès.` });
+      setIsAddNewsOpen(false);
+      setEditingNews(null);
+      setNewNews({ title: "", excerpt: "", category: "Santé", image_url: "" });
+    },
+    onError: (error) => toast({ variant: "destructive", title: "Erreur", description: error.message })
+  });
+
+  // Resources Mutation
+  const resourceMutation = useMutation({
+    mutationFn: async (resource: any) => {
+      if (editingResource) {
+        const { error } = await supabase.from("resources").update(resource).eq("id", editingResource.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("resources").insert([resource]);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_resources"] });
+      toast({ title: editingResource ? "Mis à jour" : "Ajouté", description: `La ressource a été ${editingResource ? "modifiée" : "ajoutée"} avec succès.` });
+      setIsAddResourceOpen(false);
+      setEditingResource(null);
+      setNewResource({ title: "", description: "", type: "lien", url: "" });
+    },
+    onError: (error) => toast({ variant: "destructive", title: "Erreur", description: error.message })
   });
 
   const updateSettingMutation = useMutation({
@@ -300,17 +377,103 @@ const Admin = () => {
 
                   {/* News Management */}
                   <TabsContent value="news" className="mt-0 outline-none">
-                    <SectionHeader title="Gestion des Actualités" description="Publiez et gérez les articles du blog." onAdd={() => toast({ title: "Note", description: "Interface de création en cours de développement." })} />
+                    <SectionHeader 
+                      title="Gestion des Actualités" 
+                      description="Publiez et gérez les articles du blog." 
+                      onAdd={() => {
+                        setEditingNews(null);
+                        setNewNews({ title: "", excerpt: "", category: "Santé", image_url: "" });
+                        setIsAddNewsOpen(true);
+                      }} 
+                    />
                     <div className="grid gap-6">
                       {loadingNews ? <Loader /> : news?.map(item => (
                         <AdminListItem 
                           key={item.id} 
                           title={item.title} 
-                          subtitle={item.category} 
-                          onDelete={() => deleteMutation.mutate({ table: 'news', id: item.id })}
+                          subtitle={item.category}
+                          onEdit={() => {
+                            setEditingNews(item);
+                            setNewNews({
+                              title: item.title,
+                              excerpt: item.excerpt,
+                              category: item.category,
+                              image_url: item.image_url,
+                            });
+                            setIsAddNewsOpen(true);
+                          }}
+                          onDelete={() => {
+                            setItemToDelete({ table: 'news', id: item.id });
+                            setIsDeleteDialogOpen(true);
+                          }}
                         />
                       ))}
                     </div>
+
+                    <Dialog open={isAddNewsOpen} onOpenChange={setIsAddNewsOpen}>
+                      <DialogContent className="rounded-[3rem] border-navy/5 bg-white p-12 max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle className="text-4xl font-display font-bold text-navy tracking-tight">
+                            {editingNews ? "Modifier l'article" : "Ajouter un article"}
+                          </DialogTitle>
+                        </DialogHeader>
+                        <div className="grid gap-8 py-8">
+                          <div className="grid gap-3">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Titre de l'article</Label>
+                            <Input 
+                              value={newNews.title} 
+                              onChange={(e) => setNewNews({...newNews, title: e.target.value})}
+                              placeholder="ex: Ouverture d'un nouveau centre..."
+                              className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy" 
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-6">
+                             <div className="grid gap-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Catégorie</Label>
+                                <Select value={newNews.category} onValueChange={(val) => setNewNews({...newNews, category: val})}>
+                                   <SelectTrigger className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy">
+                                      <SelectValue placeholder="Catégorie" />
+                                   </SelectTrigger>
+                                   <SelectContent>
+                                      {["Santé", "Vie de la CPTS", "Événement", "Prévention", "Annonce"].map(c => (
+                                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                                      ))}
+                                   </SelectContent>
+                                </Select>
+                             </div>
+                             <div className="grid gap-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">URL de l'image (Unsplash...)</Label>
+                                <Input 
+                                  value={newNews.image_url} 
+                                  onChange={(e) => setNewNews({...newNews, image_url: e.target.value})}
+                                  placeholder="https://images.unsplash.com/..."
+                                  className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy" 
+                                />
+                             </div>
+                          </div>
+                          <div className="grid gap-3">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Extrait / Résumé</Label>
+                            <Textarea 
+                              value={newNews.excerpt} 
+                              onChange={(e) => setNewNews({...newNews, excerpt: e.target.value})}
+                              placeholder="Bref résumé de l'article..."
+                              className="rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy p-6 min-h-[150px]" 
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter className="gap-4">
+                           <Button variant="ghost" onClick={() => setIsAddNewsOpen(false)} className="h-16 rounded-2xl px-10 font-bold">Annuler</Button>
+                           <Button 
+                             onClick={() => newsMutation.mutate(newNews)} 
+                             disabled={newsMutation.isPending}
+                             className="h-16 rounded-2xl px-12 bg-navy text-white font-bold"
+                           >
+                              {newsMutation.isPending && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
+                              Enregistrer l'article
+                           </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                   </TabsContent>
 
                    {/* Pros Management */}
@@ -318,15 +481,36 @@ const Admin = () => {
                     <SectionHeader 
                       title="Gestion de l'Annuaire" 
                       description="Gérez la liste des membres professionnels." 
-                      onAdd={() => setIsAddProOpen(true)} 
+                      onAdd={() => {
+                        setEditingPro(null);
+                        setNewPro({ title: "Dr.", first_name: "", last_name: "", specialty: "", public_phone: "", private_phone: "", email: "", address: "" });
+                        setIsAddProOpen(true);
+                      }} 
                     />
                     <div className="grid gap-6">
                       {loadingPros ? <Loader /> : pros?.map(item => (
                         <AdminListItem 
                           key={item.id} 
-                          title={`${item.title || ''} ${item.first_name || ''} ${item.last_name || item.name || ''}`} 
-                          subtitle={item.specialty} 
-                          onDelete={() => deleteMutation.mutate({ table: 'professionals', id: item.id })}
+                          title={`${item.title || ''} ${item.first_name || ''} ${item.last_name || ''}`} 
+                          subtitle={item.specialty}
+                          onEdit={() => {
+                            setEditingPro(item);
+                            setNewPro({
+                              title: item.title || "Dr.",
+                              first_name: item.first_name || "",
+                              last_name: item.last_name || "",
+                              specialty: item.specialty,
+                              public_phone: item.public_phone || "",
+                              private_phone: item.private_phone || "",
+                              email: item.email || "",
+                              address: item.address || "",
+                            });
+                            setIsAddProOpen(true);
+                          }}
+                          onDelete={() => {
+                            setItemToDelete({ table: 'professionals', id: item.id });
+                            setIsDeleteDialogOpen(true);
+                          }}
                         />
                       ))}
                     </div>
@@ -479,12 +663,12 @@ const Admin = () => {
                             Annuler
                           </Button>
                           <Button 
-                            onClick={() => insertProMutation.mutate(newPro)}
-                            disabled={insertProMutation.isPending}
+                            onClick={() => proMutation.mutate(newPro)}
+                            disabled={proMutation.isPending}
                             className="h-20 rounded-[2rem] px-16 bg-navy hover:bg-sky-600 text-white font-display font-bold text-xl shadow-3xl shadow-navy/20 transition-all flex items-center gap-6 active:scale-95"
                           >
-                            {insertProMutation.isPending ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
-                            Enregistrer le professionnel
+                            {proMutation.isPending ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
+                            {editingPro ? "Mettre à jour" : "Enregistrer le professionnel"}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -493,17 +677,101 @@ const Admin = () => {
 
                   {/* Resources Management */}
                   <TabsContent value="resources" className="mt-0 outline-none">
-                    <SectionHeader title="Gestion des Ressources" description="Gérez les documents et liens de téléchargement." onAdd={() => {}} />
+                    <SectionHeader 
+                      title="Gestion des Ressources" 
+                      description="Gérez les documents et liens de téléchargement." 
+                      onAdd={() => {
+                        setEditingResource(null);
+                        setNewResource({ title: "", description: "", type: "lien", url: "" });
+                        setIsAddResourceOpen(true);
+                      }} 
+                    />
                     <div className="grid gap-6">
                       {loadingResources ? <Loader /> : resources?.map(item => (
                         <AdminListItem 
                           key={item.id} 
                           title={item.title} 
-                          subtitle={item.type.toUpperCase()} 
-                          onDelete={() => deleteMutation.mutate({ table: 'resources', id: item.id })}
+                          subtitle={item.type.toUpperCase()}
+                          onEdit={() => {
+                            setEditingResource(item);
+                            setNewResource({
+                              title: item.title,
+                              description: item.description,
+                              type: item.type,
+                              url: item.url,
+                            });
+                            setIsAddResourceOpen(true);
+                          }}
+                          onDelete={() => {
+                            setItemToDelete({ table: 'resources', id: item.id });
+                            setIsDeleteDialogOpen(true);
+                          }}
                         />
                       ))}
                     </div>
+
+                    <Dialog open={isAddResourceOpen} onOpenChange={setIsAddResourceOpen}>
+                      <DialogContent className="rounded-[3rem] border-navy/5 bg-white p-12 max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle className="text-4xl font-display font-bold text-navy tracking-tight">{editingResource ? "Modifier la ressource" : "Ajouter une ressource"}</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid gap-8 py-8">
+                           <div className="grid grid-cols-2 gap-6">
+                              <div className="grid gap-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Titre</Label>
+                                <Input 
+                                  value={newResource.title} 
+                                  onChange={(e) => setNewResource({...newResource, title: e.target.value})}
+                                  placeholder="ex: Guide de vaccination..."
+                                  className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy" 
+                                />
+                              </div>
+                              <div className="grid gap-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Type</Label>
+                                <Select value={newResource.type} onValueChange={(val) => setNewResource({...newResource, type: val})}>
+                                   <SelectTrigger className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy">
+                                      <SelectValue placeholder="Type" />
+                                   </SelectTrigger>
+                                   <SelectContent>
+                                      {["lien", "pdf", "image", "doc"].map(t => (
+                                        <SelectItem key={t} value={t}>{t.toUpperCase()}</SelectItem>
+                                      ))}
+                                   </SelectContent>
+                                </Select>
+                              </div>
+                           </div>
+                           <div className="grid gap-3">
+                             <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">URL de la ressource</Label>
+                             <Input 
+                               value={newResource.url} 
+                               onChange={(e) => setNewResource({...newResource, url: e.target.value})}
+                               placeholder="https://..."
+                               className="h-16 rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy" 
+                             />
+                           </div>
+                           <div className="grid gap-3">
+                             <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Description</Label>
+                             <Textarea 
+                               value={newResource.description} 
+                               onChange={(e) => setNewResource({...newResource, description: e.target.value})}
+                               placeholder="Description rapide..."
+                               className="rounded-2xl border-navy/5 bg-sky-50/30 font-bold text-navy p-6" 
+                             />
+                           </div>
+                        </div>
+                        <DialogFooter className="gap-4">
+                           <Button variant="ghost" onClick={() => setIsAddResourceOpen(false)} className="h-16 rounded-2xl px-10 font-bold">Annuler</Button>
+                           <Button 
+                             onClick={() => resourceMutation.mutate(newResource)} 
+                             disabled={resourceMutation.isPending}
+                             className="h-16 rounded-2xl px-12 bg-navy text-white font-bold"
+                           >
+                              {resourceMutation.isPending && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
+                              Enregistrer la ressource
+                           </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                   </TabsContent>
 
                   {/* Messages Management */}
@@ -528,7 +796,10 @@ const Admin = () => {
                               variant="ghost" 
                               size="icon" 
                               className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl h-14 w-14 shrink-0 transition-all"
-                              onClick={() => deleteMutation.mutate({ table: 'contacts', id: item.id })}
+                              onClick={() => {
+                                setItemToDelete({ table: 'contacts', id: item.id });
+                                setIsDeleteDialogOpen(true);
+                              }}
                             >
                                <Trash2 className="w-6 h-6" />
                             </Button>
@@ -580,6 +851,33 @@ const Admin = () => {
         </section>
       </main>
       <Footer />
+
+      {/* Global Deletion Confirmation */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="rounded-[2.5rem] border-navy/5 bg-white p-12">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-3xl font-display font-bold text-navy tracking-tight">Êtes-vous absolument sûr ?</AlertDialogTitle>
+            <AlertDialogDescription className="text-lg italic text-navy/40 mt-4 leading-relaxed">
+              Cette action est irréversible. Cela supprimera définitivement l'élément de la base de données.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-4 mt-8">
+            <AlertDialogCancel className="h-16 rounded-2xl px-8 font-bold border-navy/10 text-navy hover:bg-navy/5">Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (itemToDelete) {
+                  deleteMutation.mutate(itemToDelete);
+                  setIsDeleteDialogOpen(false);
+                  setItemToDelete(null);
+                }
+              }}
+              className="h-16 rounded-2xl px-10 bg-red-500 hover:bg-red-600 text-white font-bold shadow-xl shadow-red-500/20"
+            >
+              Confirmer la suppression
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
@@ -617,7 +915,7 @@ const SectionHeader = ({ title, description, onAdd }: any) => (
   </div>
 );
 
-const AdminListItem = ({ title, subtitle, onDelete }: any) => (
+const AdminListItem = ({ title, subtitle, onEdit, onDelete }: any) => (
   <Card className="rounded-[2.5rem] border border-navy/5 shadow-2xl bg-white overflow-hidden p-8 hover:border-sky-600/30 transition-all duration-500 group/item">
     <div className="flex items-center justify-between gap-6">
       <div className="flex-1 min-w-0">
@@ -625,7 +923,12 @@ const AdminListItem = ({ title, subtitle, onDelete }: any) => (
         <p className="text-navy/20 font-black text-[10px] uppercase tracking-widest mt-2">{subtitle}</p>
       </div>
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="text-navy/40 hover:text-sky-600 hover:bg-sky-50 rounded-2xl h-14 w-14 transition-all">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-navy/40 hover:text-sky-600 hover:bg-sky-50 rounded-2xl h-14 w-14 transition-all"
+          onClick={onEdit}
+        >
           <Edit className="w-5 h-5" />
         </Button>
         <Button 
