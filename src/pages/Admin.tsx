@@ -97,8 +97,12 @@ interface Resource {
 
 interface Message {
   id: string;
+  title: string;
+  first_name: string;
+  last_name: string;
   name: string;
   email: string;
+  phone: string;
   message: string;
   created_at: string;
 }
@@ -153,6 +157,7 @@ const Admin = () => {
   const [contactPhoneInput, setContactPhoneInput] = useState("");
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [previewData, setPreviewData] = useState<any[]>([]);
+  const [searchPro, setSearchPro] = useState("");
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, bucket: string, folder: string = "general") => {
     const file = event.target.files?.[0];
@@ -444,27 +449,32 @@ const Admin = () => {
                       }} 
                     />
                     <div className="grid gap-6">
-                      {loadingNews ? <Loader /> : news?.map(item => (
-                        <AdminListItem 
-                          key={item.id} 
-                          title={item.title} 
-                          subtitle={item.category}
-                          onEdit={() => {
-                            setEditingNews(item);
-                            setNewNews({
-                              title: item.title,
-                              excerpt: item.excerpt,
-                              category: item.category,
-                              image_url: item.image_url,
-                            });
-                            setIsAddNewsOpen(true);
-                          }}
-                          onDelete={() => {
-                            setItemToDelete({ table: 'news', id: item.id });
-                            setIsDeleteDialogOpen(true);
-                          }}
-                        />
-                      ))}
+                       {loadingNews ? <Loader /> : (news && news.length > 0) ? news.map(item => (
+                         <AdminListItem 
+                           key={item.id} 
+                           title={item.title} 
+                           subtitle={item.category}
+                           onEdit={() => {
+                             setEditingNews(item);
+                             setNewNews({
+                               title: item.title,
+                               excerpt: item.excerpt,
+                               category: item.category,
+                               image_url: item.image_url,
+                             });
+                             setIsAddNewsOpen(true);
+                           }}
+                           onDelete={() => {
+                             setItemToDelete({ table: 'news', id: item.id });
+                             setIsDeleteDialogOpen(true);
+                           }}
+                         />
+                       )) : (
+                         <div className="p-20 text-center bg-white/40 backdrop-blur-3xl rounded-[3rem] border border-navy/5 shadow-inner animate-in fade-in duration-700">
+                            <Newspaper className="w-16 h-16 text-navy/10 mx-auto mb-6" />
+                            <p className="text-xl font-bold text-navy/20 italic">Aucune actualité publiée pour le moment.</p>
+                         </div>
+                       )}
                     </div>
 
                     <Dialog open={isAddNewsOpen} onOpenChange={setIsAddNewsOpen}>
@@ -588,35 +598,64 @@ const Admin = () => {
                           Ajouter
                         </Button>
                       </div>
+                     </div>
+                    
+                    <div className="mb-10">
+                       <div className="relative group">
+                          <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy/20 transition-colors group-focus-within:text-sky-600">
+                             <Search className="w-6 h-6" />
+                          </div>
+                          <Input 
+                            value={searchPro}
+                            onChange={(e) => setSearchPro(e.target.value)}
+                            placeholder="Rechercher par nom ou spécialité..."
+                            className="h-20 w-full rounded-[2rem] border-navy/5 bg-white/50 backdrop-blur-xl pl-16 pr-8 font-bold text-navy text-xl shadow-inner focus-visible:ring-sky-500/20"
+                          />
+                       </div>
                     </div>
+
                     <div className="grid gap-6">
-                      {loadingPros ? <Loader /> : pros?.map(item => (
-                        <AdminListItem 
-                          key={item.id} 
-                          title={`${item.title || ''} ${item.first_name || ''} ${item.last_name || ''}`} 
-                          subtitle={item.specialty}
-                          onEdit={() => {
-                            setEditingPro(item);
-                            setNewPro({
-                              title: item.title || "Dr.",
-                              first_name: item.first_name || "",
-                              last_name: item.last_name || "",
-                              specialty: item.specialty,
-                              public_phone: item.public_phone || "",
-                              private_phone: item.private_phone || "",
-                              email: item.email || "",
-                              address: item.address || "",
-                              photo_url: item.photo_url || "",
-                            });
-                            setIsAddProOpen(true);
-                          }}
-                          onDelete={() => {
-                            setItemToDelete({ table: 'professionals', id: item.id });
-                            setIsDeleteDialogOpen(true);
-                          }}
-                        />
-                      ))}
-                    </div>
+                       {loadingPros ? <Loader /> : (pros && pros.length > 0) ? (
+                         pros
+                           .filter(item => {
+                             const search = searchPro.toLowerCase();
+                             return item.last_name?.toLowerCase().includes(search) || 
+                                    item.first_name?.toLowerCase().includes(search) || 
+                                    item.specialty?.toLowerCase().includes(search);
+                           })
+                           .map(item => (
+                             <AdminListItem 
+                               key={item.id} 
+                               title={`${item.title || ''} ${item.first_name || ''} ${item.last_name || ''}`} 
+                               subtitle={item.specialty}
+                               onEdit={() => {
+                                 setEditingPro(item);
+                                 setNewPro({
+                                   title: item.title || "Dr.",
+                                   first_name: item.first_name || "",
+                                   last_name: item.last_name || "",
+                                   specialty: item.specialty,
+                                   public_phone: item.public_phone || "",
+                                   private_phone: item.private_phone || "",
+                                   email: item.email || "",
+                                   address: item.address || "",
+                                   photo_url: item.photo_url || "",
+                                 });
+                                 setIsAddProOpen(true);
+                               }}
+                               onDelete={() => {
+                                 setItemToDelete({ table: 'professionals', id: item.id });
+                                 setIsDeleteDialogOpen(true);
+                               }}
+                             />
+                           ))
+                       ) : (
+                         <div className="p-20 text-center bg-white/40 backdrop-blur-3xl rounded-[3rem] border border-navy/5 shadow-inner">
+                            <Users className="w-16 h-16 text-navy/10 mx-auto mb-6" />
+                            <p className="text-xl font-bold text-navy/20 italic">Aucun professionnel dans l'annuaire.</p>
+                         </div>
+                       )}
+                     </div>
 
                     <Dialog open={isAddProOpen} onOpenChange={setIsAddProOpen}>
                       <DialogContent className="rounded-[3rem] border-navy/5 bg-white p-12 max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -950,13 +989,26 @@ const Admin = () => {
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                               <div className="flex-1">
                                 <div className="flex items-center gap-4 mb-4">
-                                  <h3 className="text-xl font-display font-bold text-navy tracking-tight">{item.name}</h3>
+                                  <h3 className="text-xl font-display font-bold text-navy tracking-tight">
+                                    {item.title} {item.first_name} {item.last_name || item.name}
+                                  </h3>
                                   <span className="text-[10px] font-black uppercase tracking-widest text-navy/20">
                                     {new Date(item.created_at).toLocaleDateString()}
                                   </span>
                                 </div>
-                                <p className="text-sky-600/60 font-bold mb-4">{item.email}</p>
-                                <p className="text-navy/60 italic leading-relaxed">"{item.message}"</p>
+                                <div className="flex flex-wrap gap-x-6 gap-y-2 mb-6">
+                                   <p className="text-sky-600 font-bold bg-sky-50 px-4 py-1.5 rounded-xl text-xs flex items-center gap-2">
+                                      <Mail className="w-3.5 h-3.5" />
+                                      {item.email}
+                                   </p>
+                                   {item.phone && (
+                                     <p className="text-emerald-600 font-bold bg-emerald-50 px-4 py-1.5 rounded-xl text-xs flex items-center gap-2">
+                                        <Phone className="w-3.5 h-3.5" />
+                                        {item.phone}
+                                     </p>
+                                   )}
+                                </div>
+                                <p className="text-navy/60 italic leading-relaxed border-l-4 border-sky-100 pl-8 py-4 bg-sky-50/10 rounded-r-[2rem]">"{item.message}"</p>
                               </div>
                               <Button
                                 variant="ghost"

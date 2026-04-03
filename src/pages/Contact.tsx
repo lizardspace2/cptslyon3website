@@ -13,10 +13,24 @@ import { Link } from "react-router-dom";
 
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Contact = () => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+  const [formData, setFormData] = useState({ 
+    title: "M.",
+    first_name: "", 
+    last_name: "", 
+    email: "", 
+    phone: "",
+    message: "" 
+  });
    const [isSubmitting, setIsSubmitting] = useState(false);
 
    const { data: settings } = useQuery({
@@ -39,8 +53,11 @@ const Contact = () => {
         .from("contacts")
         .insert([
           { 
-            name: formData.name, 
+            title: formData.title,
+            first_name: formData.first_name, 
+            last_name: formData.last_name, 
             email: formData.email, 
+            phone: formData.phone,
             message: formData.message 
           }
         ]);
@@ -51,7 +68,7 @@ const Contact = () => {
         title: "Message envoyé avec succès", 
         description: "Nous avons bien reçu votre demande et vous répondrons sous peu." 
       });
-      setFormData({ name: "", email: "", message: "" });
+      setFormData({ title: "M.", first_name: "", last_name: "", email: "", phone: "", message: "" });
     } catch (error: any) {
       console.error("Error sending contact message:", error);
       toast({ 
@@ -145,25 +162,60 @@ const Contact = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-14">
-                      <div className="grid gap-14 md:grid-cols-2">
-                        <div className="space-y-6">
-                          <Label htmlFor="name" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                      <div className="grid gap-14 md:grid-cols-12 items-end">
+                        <div className="md:col-span-3 space-y-6">
+                          <Label className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
                             <span className="w-2 h-2 rounded-full bg-sky-500" />
-                            Votre Nom
+                            Civilité
+                          </Label>
+                          <Select 
+                            value={formData.title} 
+                            onValueChange={(val) => setFormData({ ...formData, title: val })}
+                          >
+                            <SelectTrigger className="h-20 rounded-[1.8rem] border-0 bg-sky-50/10 font-bold text-navy px-8 shadow-inner text-xl">
+                              <SelectValue placeholder="Titre" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-2xl border-navy/5">
+                              {["M.", "Mme", "Dr.", "Pr."].map(t => (
+                                <SelectItem key={t} value={t} className="py-4 font-bold text-navy">{t}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="md:col-span-4 space-y-6">
+                          <Label htmlFor="first_name" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                            <span className="w-2 h-2 rounded-full bg-sky-500" />
+                            Prénom
                           </Label>
                           <Input
-                            id="name"
-                            placeholder="Dr. Jean-Pierre Durant"
+                            id="first_name"
+                            placeholder="Guillaume"
                             className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus-visible:ring-sky-500/20 px-10 transition-all text-xl shadow-inner border-0"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            value={formData.first_name}
+                            onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                             required
                           />
                         </div>
+                        <div className="md:col-span-5 space-y-6">
+                          <Label htmlFor="last_name" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                            <span className="w-2 h-2 rounded-full bg-sky-500" />
+                            Nom de Famille
+                          </Label>
+                          <Input
+                            id="last_name"
+                            placeholder="RECIPON"
+                            className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus-visible:ring-sky-500/20 px-10 transition-all text-xl shadow-inner border-0"
+                            value={formData.last_name}
+                            onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="grid gap-14 md:grid-cols-2">
                         <div className="space-y-6">
                           <Label htmlFor="email" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
                             <span className="w-2 h-2 rounded-full bg-sky-500" />
-                            Email
+                            Email Professionnel
                           </Label>
                           <Input
                             id="email"
@@ -172,6 +224,21 @@ const Contact = () => {
                             className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus-visible:ring-sky-500/20 px-10 transition-all text-xl shadow-inner border-0"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-6">
+                          <Label htmlFor="phone" className="text-navy font-black text-[10px] uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                            <span className="w-2 h-2 rounded-full bg-sky-500" />
+                            Téléphone
+                          </Label>
+                          <Input
+                            id="phone"
+                            type="tel"
+                            placeholder="06 12 34 56 78"
+                            className="h-20 rounded-[1.8rem] border-navy/5 bg-sky-50/10 font-bold text-navy placeholder:text-navy/10 focus-visible:ring-sky-500/20 px-10 transition-all text-xl shadow-inner border-0"
+                            value={formData.phone}
+                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                             required
                           />
                         </div>
