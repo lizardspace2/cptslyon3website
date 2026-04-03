@@ -27,7 +27,11 @@ import {
   PhoneForwarded,
   Upload,
   Image as ImageIcon,
-  Zap
+  Zap,
+  UserCheck,
+  XCircle,
+  Clock,
+  ShieldCheck
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -128,11 +132,26 @@ interface Replacement {
   created_at: string;
 }
 
+interface MemberRow {
+  id: string;
+  email: string;
+  title?: string;
+  first_name?: string;
+  last_name?: string;
+  specialty?: string;
+  public_phone?: string;
+  private_phone?: string;
+  address?: string;
+  status: string;
+  created_at: string;
+}
+
 const Admin = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   // --- States ---
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [memberFilter, setMemberFilter] = useState<string>("all");
   
   // Professionals
   const [isAddProOpen, setIsAddProOpen] = useState(false);
@@ -314,6 +333,27 @@ const Admin = () => {
     }
   });
 
+  const { data: members, isLoading: loadingMembers } = useQuery({
+    queryKey: ["admin_members"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("members").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as MemberRow[];
+    }
+  });
+
+  const memberStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase.from("members").update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_members"] });
+      toast({ title: "Statut mis à jour", description: "Le statut de l'adhérent a été modifié." });
+    },
+    onError: (error) => toast({ variant: "destructive", title: "Erreur", description: error.message })
+  });
+
   useEffect(() => {
     if (settings && Array.isArray(settings)) {
       const calendar = settings.find((s: any) => s.key === "google_calendar_url")?.value || "";
@@ -450,6 +490,7 @@ const Admin = () => {
                         { value: "dashboard", label: "Dashboard", icon: LayoutDashboard },
                         { value: "news", label: "Blog/Actualités", icon: Newspaper },
                         { value: "pros", label: "Annuaire", icon: Users },
+                        { value: "members", label: "Adhérents", icon: ShieldCheck },
                         { value: "resources", label: "Ressources", icon: FileText },
                         { value: "announcements", label: "Annonces", icon: Zap },
                         { value: "messages", label: "Messages", icon: Mail },
@@ -472,9 +513,10 @@ const Admin = () => {
                 <div className="flex-1 min-w-0">
                   {/* Dashboard */}
                   <TabsContent value="dashboard" className="mt-0 outline-none">
-                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 mb-12">
+                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 mb-12">
                       <StatCard count={news?.length || 0} label="Actualités" icon={Newspaper} color="sky" />
-                      <StatCard count={pros?.length || 0} label="Professionnels dans l'annuaire" icon={Users} color="emerald" />
+                      <StatCard count={pros?.length || 0} label="Professionnels" icon={Users} color="emerald" />
+                      <StatCard count={members?.filter(m => m.status === 'pending').length || 0} label="Adhésions en attente" icon={Clock} color="amber" />
                       <StatCard count={messages?.length || 0} label="Messages Reçus" icon={Mail} color="navy" />
                     </div>
                     
@@ -1407,6 +1449,109 @@ const Admin = () => {
                         </Card>
                     </div>
                   </TabsContent>
+
+                  {/* Members Management */}
+                  <TabsContent value="members" className="mt-0 outline-none">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 mb-12">
+                      <div>
+                        <h2 className="text-4xl font-display font-bold text-navy tracking-tight mb-4">Gestion des Adhérents</h2>
+                        <p className="text-navy/40 font-medium italic text-lg leading-relaxed">Approuvez ou refusez les demandes d'adhésion.</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {(["all", "pending", "approved", "rejected"] as const).map((f) => {
+                          const labels: Record<string, string> = { all: "Tous", pending: "En attente", approved: "Approuvés", rejected: "Refusés" };
+                          const colors: Record<string, string> = { all: "bg-navy/5 text-navy", pending: "bg-amber-50 text-amber-700 border-amber-200", approved: "bg-emerald-50 text-emerald-700 border-emerald-200", rejected: "bg-red-50 text-red-600 border-red-200" };
+                          return (
+                            <button
+                              key={f}
+                              onClick={() => setMemberFilter(f)}
+                              className={`px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest border transition-all ${
+                                memberFilter === f ? colors[f] + " shadow-lg" : "border-navy/5 text-navy/30 hover:bg-navy/5"
+                              }`}
+                            >
+                              {labels[f]}
+                              {f === "pending" && members?.filter(m => m.status === "pending").length ? (
+                                <span className="ml-2 w-5 h-5 inline-flex items-center justify-center rounded-full bg-amber-500 text-white text-[9px] font-black">{members.filter(m => m.status === "pending").length}</span>
+                              ) : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-6">
+                      {loadingMembers ? (
+                        <div className="flex items-center justify-center py-20"><Loader2 className="w-12 h-12 text-sky-600 animate-spin" /></div>
+                      ) : (() => {
+                        const filtered = members?.filter(m => memberFilter === "all" ? true : m.status === memberFilter) || [];
+                        if (filtered.length === 0) return (
+                          <div className="p-20 text-center bg-white/40 backdrop-blur-3xl rounded-[3rem] border border-navy/5 shadow-inner">
+                            <ShieldCheck className="w-16 h-16 text-navy/10 mx-auto mb-6" />
+                            <p className="text-xl font-bold text-navy/20 italic">Aucun adhérent dans cette catégorie.</p>
+                          </div>
+                        );
+                        return filtered.map((m) => {
+                          const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
+                            pending: { label: "En attente", color: "text-amber-600", bg: "bg-amber-50 border-amber-200" },
+                            approved: { label: "Approuvé", color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200" },
+                            rejected: { label: "Refusé", color: "text-red-500", bg: "bg-red-50 border-red-200" },
+                          };
+                          const sc = statusConfig[m.status] || statusConfig.pending;
+                          return (
+                            <Card key={m.id} className="rounded-[2.5rem] border border-navy/5 shadow-2xl bg-white overflow-hidden p-8 hover:border-sky-600/20 transition-all duration-500">
+                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-4 mb-2 flex-wrap">
+                                    <h3 className="text-xl font-display font-bold text-navy tracking-tight uppercase">
+                                      {m.title} {m.first_name} {m.last_name}
+                                    </h3>
+                                    <span className={`px-4 py-1 rounded-full text-[9px] font-black tracking-widest border ${sc.bg} ${sc.color}`}>{sc.label}</span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-navy/40">
+                                    <span className="font-bold">{m.specialty}</span>
+                                    <span>{m.email}</span>
+                                    {m.public_phone && <span>{m.public_phone}</span>}
+                                    {m.address && <span>{m.address}</span>}
+                                  </div>
+                                  <p className="text-[10px] font-black uppercase tracking-widest text-navy/15 mt-2">Inscrit le {new Date(m.created_at).toLocaleDateString("fr-FR")}</p>
+                                </div>
+                                <div className="flex items-center gap-3 shrink-0">
+                                  {m.status !== "approved" && (
+                                    <Button
+                                      onClick={() => memberStatusMutation.mutate({ id: m.id, status: "approved" })}
+                                      disabled={memberStatusMutation.isPending}
+                                      className="h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 shadow-lg transition-all"
+                                    >
+                                      <UserCheck className="w-4 h-4 mr-2" /> Approuver
+                                    </Button>
+                                  )}
+                                  {m.status !== "rejected" && (
+                                    <Button
+                                      onClick={() => memberStatusMutation.mutate({ id: m.id, status: "rejected" })}
+                                      disabled={memberStatusMutation.isPending}
+                                      variant="outline"
+                                      className="h-12 rounded-2xl border-red-200 text-red-500 hover:bg-red-50 font-bold px-6 transition-all"
+                                    >
+                                      <XCircle className="w-4 h-4 mr-2" /> Refuser
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl h-12 w-12 transition-all"
+                                    onClick={() => { setItemToDelete({ table: "members", id: m.id }); setIsDeleteDialogOpen(true); }}
+                                  >
+                                    <Trash2 className="w-5 h-5" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </Card>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </TabsContent>
+
                 </div>
               </div>
             </Tabs>

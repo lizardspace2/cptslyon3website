@@ -91,3 +91,20 @@ CREATE TABLE public.site_settings (
   updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   CONSTRAINT site_settings_pkey PRIMARY KEY (key)
 );
+
+CREATE TABLE public.members (
+  id uuid NOT NULL,
+  email text NOT NULL,
+  title text,
+  first_name text,
+  last_name text,
+  specialty text,
+  public_phone text,
+  private_phone text,
+  address text,
+  photo_url text,
+  status text NOT NULL DEFAULT 'pending'::text,
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT members_pkey PRIMARY KEY (id),
+  CONSTRAINT members_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
+);
