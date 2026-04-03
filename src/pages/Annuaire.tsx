@@ -2,10 +2,17 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PageBanner from "@/components/PageBanner";
 import { motion } from "framer-motion";
-import { Search, MapPin, Phone, User, ArrowRight, UserCheck, ShieldCheck, Mail } from "lucide-react";
+import { Search, MapPin, Phone, User, ArrowRight, UserCheck, ShieldCheck, Mail, X, ExternalLink, Globe, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -28,6 +35,7 @@ interface Professional {
 
 const Annuaire = () => {
   const [search, setSearch] = useState("");
+  const [selectedPro, setSelectedPro] = useState<Professional | null>(null);
 
   const { data: professionals, isLoading, error } = useQuery({
     queryKey: ["professionals"],
@@ -142,7 +150,10 @@ const Annuaire = () => {
                     </div>
                   </div>
                   
-                  <Button className="h-20 rounded-[2rem] bg-navy hover:bg-sky-600 text-white px-12 font-black text-lg transition-all shadow-3xl shadow-navy/30 active:scale-95 group-hover:-translate-x-4 flex items-center gap-4 group/btn">
+                  <Button 
+                    onClick={() => setSelectedPro(pro)}
+                    className="h-20 rounded-[2rem] bg-navy hover:bg-sky-600 text-white px-12 font-black text-lg transition-all shadow-3xl shadow-navy/30 active:scale-95 group-hover:-translate-x-4 flex items-center gap-4 group/btn"
+                  >
                     Voir Fiche
                     <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-3 transition-transform" />
                   </Button>
@@ -168,6 +179,117 @@ const Annuaire = () => {
             </div>
           </div>
         </section>
+
+        {/* Fiche Détaillée Modal */}
+        <Dialog open={!!selectedPro} onOpenChange={(open) => !open && setSelectedPro(null)}>
+          <DialogContent className="max-w-3xl rounded-[3rem] border-none bg-white p-0 overflow-hidden shadow-4xl animate-in fade-in zoom-in duration-300">
+            {selectedPro && (
+              <div className="relative">
+                {/* Header with Background Accent */}
+                <div className="h-48 bg-sky-600 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent)]" />
+                  <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-navy/20 rounded-full blur-3xl" />
+                  <div className="absolute top-12 left-12 z-10 text-white">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
+                        <UserCheck className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-xs font-black uppercase tracking-[0.4em] opacity-80">Fiche Professionnelle</span>
+                    </div>
+                    <h2 className="text-4xl font-display font-bold tracking-tight">
+                      {selectedPro.title} {selectedPro.first_name} {selectedPro.last_name || selectedPro.name}
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="p-12 pt-16">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    {/* Infos Principales */}
+                    <div className="space-y-10 focus:outline-none">
+                       <div>
+                          <label className="text-[10px] font-black uppercase tracking-[0.3em] text-sky-600 block mb-6">Spécialité & Expertise</label>
+                          <div className="flex items-center gap-4 p-6 rounded-3xl bg-sky-50 border border-sky-600/10">
+                             <ShieldCheck className="w-8 h-8 text-sky-600" />
+                             <span className="text-xl font-display font-bold text-navy">{selectedPro.specialty}</span>
+                          </div>
+                       </div>
+
+                       <div>
+                          <label className="text-[10px] font-black uppercase tracking-[0.3em] text-sky-600 block mb-6">Localisation</label>
+                          <div className="space-y-4">
+                             <div className="flex items-start gap-4 p-6 rounded-3xl bg-navy/[0.02] border border-navy/5 group hover:border-sky-600/20 transition-all">
+                                <MapPin className="w-6 h-6 text-sky-600 shrink-0 mt-1" />
+                                <div>
+                                   <p className="font-bold text-navy text-lg leading-snug mb-4">{selectedPro.address}</p>
+                                   <a 
+                                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selectedPro.address}, 69003 Lyon`)}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-2 text-sky-600 font-black text-xs uppercase tracking-widest hover:gap-4 transition-all"
+                                   >
+                                      Voir l'itinéraire
+                                      <ExternalLink className="w-3.5 h-3.5" />
+                                   </a>
+                                </div>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* Contact & Actions */}
+                    <div className="space-y-10">
+                       <div>
+                          <label className="text-[10px] font-black uppercase tracking-[0.3em] text-sky-600 block mb-6">Coordonnées de contact</label>
+                          <div className="space-y-4">
+                             {selectedPro.public_phone && (
+                               <a 
+                                 href={`tel:${selectedPro.public_phone.replace(/\s/g, '')}`}
+                                 className="flex items-center gap-6 p-6 rounded-3xl bg-navy text-white hover:bg-sky-600 transition-all shadow-xl shadow-navy/10 group"
+                               >
+                                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                     <Phone className="w-6 h-6" />
+                                  </div>
+                                  <div>
+                                     <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-1">Téléphone Public</p>
+                                     <p className="text-xl font-display font-bold">{selectedPro.public_phone}</p>
+                                  </div>
+                               </a>
+                             )}
+
+                             {selectedPro.email && (
+                               <a 
+                                 href={`mailto:${selectedPro.email}`}
+                                 className="flex items-center gap-6 p-6 rounded-3xl border border-navy/5 bg-white hover:bg-sky-50 transition-all group"
+                               >
+                                  <div className="w-12 h-12 rounded-xl bg-sky-50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                     <Mail className="w-6 h-6 text-sky-600" />
+                                  </div>
+                                  <div>
+                                     <p className="text-[10px] font-bold uppercase tracking-widest text-navy/30 mb-1">Email Professionnel</p>
+                                     <p className="text-xl font-display font-bold text-navy truncate max-w-[200px]">{selectedPro.email}</p>
+                                  </div>
+                               </a>
+                             )}
+                          </div>
+                       </div>
+
+                       <div className="pt-6">
+                           <div className="p-8 rounded-[2.5rem] bg-emerald-50 border border-emerald-500/10 flex items-center gap-6">
+                              <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
+                                 <ShieldCheck className="w-6 h-6" />
+                              </div>
+                              <p className="text-sm font-medium text-emerald-800 leading-relaxed italic">
+                                Ce praticien est membre certifié de la **CPTS Lyon 3**.
+                              </p>
+                           </div>
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </main>
       <Footer />
     </div>
