@@ -60,6 +60,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import * as XLSX from "xlsx";
 
 // --- Types ---
 interface Article {
@@ -150,6 +151,8 @@ const Admin = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
   const [contactPhoneInput, setContactPhoneInput] = useState("");
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<any[]>([]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, bucket: string, folder: string = "general") => {
     const file = event.target.files?.[0];
@@ -253,7 +256,6 @@ const Admin = () => {
   }, [settings]);
 
   // --- Mutations ---
-  // Professionals Mutation
   const proMutation = useMutation({
     mutationFn: async (pro: any) => {
       if (editingPro) {
@@ -272,6 +274,22 @@ const Admin = () => {
       setNewPro({ title: "Dr.", first_name: "", last_name: "", specialty: "", public_phone: "", private_phone: "", email: "", address: "", photo_url: "" });
     },
     onError: (error) => toast({ variant: "destructive", title: "Erreur", description: error.message })
+  });
+
+
+  // Bulk Professionals Mutation
+  const bulkProMutation = useMutation({
+    mutationFn: async (pros: any[]) => {
+      const { error } = await supabase.from("professionals").insert(pros);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_pros"] });
+      toast({ title: "Import réussi", description: `${previewData.length} professionnels ont été importés.` });
+      setIsImportDialogOpen(false);
+      setPreviewData([]);
+    },
+    onError: (error) => toast({ variant: "destructive", title: "Erreur d'importation", description: error.message })
   });
 
   // News Mutation
@@ -545,15 +563,32 @@ const Admin = () => {
 
                    {/* Pros Management */}
                    <TabsContent value="pros" className="mt-0 outline-none">
-                    <SectionHeader 
-                      title="Gestion de l'Annuaire" 
-                      description="Gérez la liste des membres professionnels." 
-                      onAdd={() => {
-                        setEditingPro(null);
-                        setNewPro({ title: "Dr.", first_name: "", last_name: "", specialty: "", public_phone: "", private_phone: "", email: "", address: "", photo_url: "" });
-                        setIsAddProOpen(true);
-                      }} 
-                    />
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 mb-12">
+                      <div>
+                        <h2 className="text-4xl font-display font-bold text-navy tracking-tight mb-4">Annuaire</h2>
+                        <p className="text-navy/40 font-medium italic text-lg leading-relaxed">Gérez la liste des membres professionnels.</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4">
+                        <Button 
+                          onClick={() => setIsImportDialogOpen(true)}
+                          className="h-20 rounded-[2rem] bg-white border-2 border-sky-600/20 text-sky-600 hover:bg-sky-50 px-10 font-display font-bold text-lg transition-all shadow-xl flex items-center gap-4 active:scale-95"
+                        >
+                          <Upload className="w-6 h-6" strokeWidth={3} />
+                          Importer
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            setEditingPro(null);
+                            setNewPro({ title: "Dr.", first_name: "", last_name: "", specialty: "", public_phone: "", private_phone: "", email: "", address: "", photo_url: "" });
+                            setIsAddProOpen(true);
+                          }} 
+                          className="h-20 rounded-[2rem] bg-sky-600 hover:bg-navy text-white px-10 font-display font-bold text-lg transition-all shadow-3xl shadow-sky-600/30 flex items-center gap-4 active:scale-95"
+                        >
+                          <Plus className="w-6 h-6" strokeWidth={3} />
+                          Ajouter
+                        </Button>
+                      </div>
+                    </div>
                     <div className="grid gap-6">
                       {loadingPros ? <Loader /> : pros?.map(item => (
                         <AdminListItem 
@@ -1019,6 +1054,121 @@ const Admin = () => {
         </section>
       </main>
       <Footer />
+
+      {/* Import Professional Dialog */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+         <DialogContent className="max-w-4xl rounded-[3rem] border-navy/5 bg-white p-12">
+           <DialogHeader>
+              <DialogTitle className="text-3xl font-display font-bold text-navy tracking-tight">Importer l'annuaire</DialogTitle>
+              <DialogDescription className="text-lg italic text-navy/40 mt-4 leading-relaxed">
+                 Importez vos professionnels en masse à partir d'un fichier CSV ou Excel.
+              </DialogDescription>
+           </DialogHeader>
+           
+           <div className="py-10 space-y-10">
+              <div className="grid gap-6">
+                 <Label className="text-[10px] font-black uppercase tracking-widest text-navy/30 px-2">Sélectionner le fichier (CSV, XLSX)</Label>
+                 <div className="relative h-40 w-full group/import">
+                    <input 
+                      type="file" 
+                      accept=".csv, .xlsx, .xls, .json"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (evt) => {
+                            try {
+                              const bstr = evt.target?.result;
+                              let data: any[] = [];
+                              
+                              if (file.name.endsWith('.json')) {
+                                data = JSON.parse(bstr as string);
+                              } else {
+                                const wb = XLSX.read(bstr, { type: 'binary' });
+                                const wsname = wb.SheetNames[0];
+                                const ws = wb.Sheets[wsname];
+                                data = XLSX.utils.sheet_to_json(ws);
+                              }
+                              
+                              // Mapping intelligent
+                              const mappedData = data.map((row: any) => ({
+                                title: row.Titre || row.title || row.titre || "Dr.",
+                                first_name: row.Prénom || row.first_name || row.prenom || "",
+                                last_name: row.Nom || row.last_name || row.nom || "",
+                                specialty: row.Spécialité || row.specialty || row.specialite || "",
+                                public_phone: String(row.Téléphone || row.public_phone || row.telephone || ""),
+                                email: row.Email || row.email || "",
+                                address: row.Adresse || row.address || row.adresse || ""
+                              }));
+                              
+                              setPreviewData(mappedData);
+                            } catch (err) {
+                              toast({ variant: "destructive", title: "Erreur de lecture", description: "Le fichier n'a pas pu être lu correctement." });
+                            }
+                          };
+
+                          if (file.name.endsWith('.json')) {
+                            reader.readAsText(file);
+                          } else {
+                            reader.readAsBinaryString(file);
+                          }
+                        }
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div className="h-40 w-full rounded-[2.5rem] border-4 border-dashed border-navy/5 bg-sky-50/20 flex flex-col items-center justify-center gap-4 transition-all group-hover/import:border-sky-600/30 group-hover/import:bg-sky-50/50">
+                       <Upload className="w-12 h-12 text-sky-600" />
+                       <p className="font-bold text-navy/40">Cliquez pour choisir un fichier ou glissez-le ici</p>
+                    </div>
+                 </div>
+              </div>
+
+              {previewData.length > 0 && (
+                 <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                       <h4 className="text-xl font-display font-bold text-navy tracking-tight">{previewData.length} professionnels détectés</h4>
+                       <Button variant="ghost" className="text-red-500 font-bold" onClick={() => setPreviewData([])}>Vider</Button>
+                    </div>
+                    <div className="max-h-[300px] overflow-y-auto rounded-3xl border border-navy/5 shadow-inner bg-navy/[0.02] p-6">
+                       <table className="w-full text-left">
+                          <thead>
+                             <tr className="text-[10px] font-black uppercase tracking-widest text-navy/30">
+                                <th className="pb-4 px-4">Nom Complet</th>
+                                <th className="pb-4 px-4">Spécialité</th>
+                                <th className="pb-4 px-4">Ville / Adresse</th>
+                             </tr>
+                          </thead>
+                          <tbody className="divide-y divide-navy/5">
+                             {previewData.slice(0, 10).map((p, i) => (
+                                <tr key={i} className="text-sm">
+                                   <td className="py-4 px-4 font-bold text-navy">{p.title} {p.first_name} {p.last_name}</td>
+                                   <td className="py-4 px-4 font-medium text-navy/60">{p.specialty}</td>
+                                   <td className="py-4 px-4 font-medium text-navy/40 truncate max-w-[200px]">{p.address}</td>
+                                </tr>
+                             ))}
+                          </tbody>
+                       </table>
+                       {previewData.length > 10 && (
+                         <p className="text-center text-xs italic text-navy/20 pt-6">... et {previewData.length - 10} autres professionnels</p>
+                       )}
+                    </div>
+                 </div>
+              )}
+           </div>
+
+           <DialogFooter className="gap-6 pt-8 border-t border-navy/5">
+              <Button variant="ghost" onClick={() => { setIsImportDialogOpen(false); setPreviewData([]); }} className="h-16 rounded-2xl px-10 font-bold border-navy/5 hover:bg-sky-50">Annuler</Button>
+              <Button 
+                onClick={() => bulkProMutation.mutate(previewData)} 
+                disabled={bulkProMutation.isPending || previewData.length === 0}
+                className="h-16 rounded-2xl px-20 bg-sky-600 hover:bg-navy text-white font-bold transition-all shadow-3xl shadow-sky-600/30 disabled:opacity-50"
+              >
+                 {bulkProMutation.isPending && <Loader2 className="w-5 h-5 mr-4 animate-spin text-white" />}
+                 Confirmer l'importation de {previewData.length} pros
+              </Button>
+           </DialogFooter>
+         </DialogContent>
+      </Dialog>
 
       {/* Global Deletion Confirmation */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
