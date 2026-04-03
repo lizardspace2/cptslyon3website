@@ -100,7 +100,7 @@ const PublicPage = ({ onSignUp, onSignIn }: { onSignUp: any; onSignIn: any }) =>
       toast({ title: "Connexion réussie", description: "Bienvenue dans votre espace adhérent !" });
     } catch (err: any) {
       const msg = err.message?.includes("Invalid login") ? "Email ou mot de passe incorrect." 
-        : err.message?.includes("Email not confirmed") ? "Veuillez d'abord confirmer votre email."
+        : err.message?.includes("Email not confirmed") ? "L'administrateur ne vous a pas encore autorisé."
         : err.message;
       toast({ variant: "destructive", title: "Erreur de connexion", description: msg });
     } finally {
