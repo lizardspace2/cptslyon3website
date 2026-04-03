@@ -80,9 +80,12 @@ const Actualites = () => {
                       <div className="absolute top-8 left-8 bg-white/90 backdrop-blur-md text-sky-700 text-xs font-black px-5 py-2.5 rounded-2xl shadow-2xl uppercase tracking-widest border border-white/20">
                         {article.category}
                       </div>
-                      <div className="absolute bottom-8 right-8 w-16 h-16 rounded-[1.8rem] bg-white text-navy flex items-center justify-center shadow-3xl transform translate-y-32 group-hover:translate-y-0 transition-all duration-700 hover:bg-sky-600 hover:text-white cursor-pointer group/plus">
+                      <Link 
+                        to={`/actualites/${article.id}`}
+                        className="absolute bottom-8 right-8 w-16 h-16 rounded-[1.8rem] bg-white text-navy flex items-center justify-center shadow-3xl transform translate-y-32 group-hover:translate-y-0 transition-all duration-700 hover:bg-sky-600 hover:text-white cursor-pointer group/plus"
+                      >
                         <Plus className="w-8 h-8 group-hover/plus:rotate-90 transition-transform duration-500" />
-                      </div>
+                      </Link>
                     </div>
                     <div className="p-12 flex flex-col flex-1">
                       <div className="flex items-center gap-3 text-xs font-black text-sky-600/60 uppercase tracking-[0.2em] mb-6">
@@ -100,10 +103,13 @@ const Actualites = () => {
                         {article.excerpt}
                       </p>
                       <div className="mt-auto pt-8 border-t border-navy/5">
-                        <button className="flex items-center gap-3 text-navy font-black hover:text-sky-600 transition-all uppercase text-xs tracking-widest group/btn">
+                        <Link 
+                          to={`/actualites/${article.id}`}
+                          className="flex items-center gap-3 text-navy font-black hover:text-sky-600 transition-all uppercase text-xs tracking-widest group/btn"
+                        >
                           Lire l'article complet
                           <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-3 transition-transform text-sky-600" />
-                        </button>
+                        </Link>
                       </div>
                     </div>
                   </motion.article>

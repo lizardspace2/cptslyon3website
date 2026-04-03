@@ -12,6 +12,7 @@ import Ressources from "./pages/Ressources";
 import Remplacement from "./pages/Remplacement";
 import EspaceAdherent from "./pages/EspaceAdherent";
 import Agenda from "./pages/Agenda";
+import NewsDetail from "./pages/NewsDetail";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/presentation" element={<Presentation />} />
           <Route path="/actualites" element={<Actualites />} />
+          <Route path="/actualites/:id" element={<NewsDetail />} />
           <Route path="/annuaire" element={<Annuaire />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/ressources" element={<Ressources />} />

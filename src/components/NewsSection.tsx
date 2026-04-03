@@ -94,7 +94,7 @@ const NewsSection = () => {
                   {article.category}
                 </div>
                 <Link 
-                  to="/actualites"
+                  to={`/actualites/${article.id}`}
                   className="absolute bottom-6 right-6 w-14 h-14 rounded-2xl bg-white text-navy flex items-center justify-center shadow-xl transform translate-y-20 group-hover:translate-y-0 transition-all duration-500 hover:bg-sky-600 hover:text-white"
                 >
                   <Plus className="w-7 h-7" />
@@ -106,7 +106,7 @@ const NewsSection = () => {
                   {article.date}
                 </div>
                 <h3 className="text-2xl font-display font-bold text-navy mb-4 line-clamp-2 leading-tight group-hover:text-sky-600 transition-colors duration-300">
-                  <Link to="/actualites">
+                  <Link to={`/actualites/${article.id}`}>
                     {article.title}
                   </Link>
                 </h3>
@@ -115,7 +115,7 @@ const NewsSection = () => {
                 </p>
                 <div className="mt-auto pt-6 border-t border-navy/5">
                   <Link 
-                    to="/actualites"
+                    to={`/actualites/${article.id}`}
                     className="inline-flex items-center text-navy font-bold hover:text-sky-600 group/link transition-colors"
                   >
                     Lire l'article complet

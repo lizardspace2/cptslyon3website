@@ -155,6 +155,7 @@ const Admin = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
   const [contactPhoneInput, setContactPhoneInput] = useState("");
+  const [calendarUrlInput, setCalendarUrlInput] = useState("");
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [previewData, setPreviewData] = useState<any[]>([]);
   const [searchPro, setSearchPro] = useState("");
@@ -250,14 +251,13 @@ const Admin = () => {
     }
   });
 
-  const [calendarUrlInput, setCalendarUrlInput] = useState("");
-
   useEffect(() => {
-    const calendarSetting = settings?.find((s: any) => s.key === "google_calendar_url");
-    if (calendarSetting) setCalendarUrlInput(calendarSetting.value);
-    
-    const phoneSetting = settings?.find((s: any) => s.key === "contact_phone");
-    if (phoneSetting) setContactPhoneInput(phoneSetting.value);
+    if (settings && Array.isArray(settings)) {
+      const calendar = settings.find((s: any) => s.key === "google_calendar_url")?.value || "";
+      const phone = settings.find((s: any) => s.key === "contact_phone")?.value || "";
+      setCalendarUrlInput(calendar || "");
+      setContactPhoneInput(phone || "");
+    }
   }, [settings]);
 
   // --- Mutations ---
@@ -280,7 +280,6 @@ const Admin = () => {
     },
     onError: (error) => toast({ variant: "destructive", title: "Erreur", description: error.message })
   });
-
 
   // Bulk Professionals Mutation
   const bulkProMutation = useMutation({
