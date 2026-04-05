@@ -128,6 +128,9 @@ export function useMessaging(memberId: string | undefined) {
               .then(({ data }) => {
                 setMessages((prev) => [...prev, { ...newMessage, sender: data as any }]);
               });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedMessage = payload.new as MessagingMessage;
+            setMessages((prev) => prev.map((m) => m.id === updatedMessage.id ? { ...m, ...updatedMessage } : m));
           } else if (payload.eventType === 'DELETE') {
             setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
           }
@@ -232,6 +235,20 @@ export function useMessaging(memberId: string | undefined) {
     }
   };
 
+  const editMessage = async (messageId: string, content: string) => {
+    if (!memberId || !content.trim()) return;
+
+    const { error } = await supabase
+      .from('messaging_messages')
+      .update({ content })
+      .eq('id', messageId)
+      .eq('sender_id', memberId);
+
+    if (error) {
+      toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de modifier le message.' });
+    }
+  };
+
   const createDirectMessage = async (targetMemberId: string) => {
     if (!memberId) return;
     const { data: myRooms } = await supabase.from('messaging_room_members').select('room_id').eq('member_id', memberId);
@@ -269,6 +286,7 @@ export function useMessaging(memberId: string | undefined) {
     typingMembers,
     sendMessage,
     deleteMessage,
+    editMessage,
     createDirectMessage,
     sendTyping,
     uploadFile,

@@ -5,13 +5,24 @@ import { WorkspaceGroup, WorkspacePost } from '@/types/messaging';
 import { 
   Plus, Users, MessageCircle, Heart, Share2, 
   Trash2, Search, Filter, Hash, Star, LayoutGrid, Calendar, Pin, PinOff,
-  FileText, ExternalLink, Loader2
+  FileText, ExternalLink, Loader2, Pencil, Check, X
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -37,6 +48,7 @@ export default function WorkspaceGroups({ currentMember }: WorkspaceGroupsProps)
     loading, 
     createPost, 
     deletePost,
+    editPost,
     togglePinPost,
     uploadFile,
     createGroup 
@@ -47,6 +59,9 @@ export default function WorkspaceGroups({ currentMember }: WorkspaceGroupsProps)
   const [isUploading, setIsUploading] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: '', description: '', tag: 'Général' });
+  
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
 
   const handleCreateGroup = async () => {
     if (newGroup.name.trim()) {
@@ -62,6 +77,14 @@ export default function WorkspaceGroups({ currentMember }: WorkspaceGroupsProps)
     if (postInput.trim()) {
       createPost(postInput);
       setPostInput('');
+    }
+  };
+
+  const handleEditPost = async (id: string) => {
+    if (editingContent.trim()) {
+      await editPost(id, editingContent);
+      setEditingPostId(null);
+      setEditingContent('');
     }
   };
 
@@ -158,7 +181,7 @@ export default function WorkspaceGroups({ currentMember }: WorkspaceGroupsProps)
                 }`}
               >
                 {activeGroupId === group.id && (
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-sky-5050/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                 )}
                 <div className="relative z-10 flex flex-col gap-3">
                   <div className="flex items-center justify-between">
@@ -284,32 +307,102 @@ export default function WorkspaceGroups({ currentMember }: WorkspaceGroupsProps)
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 opacity-0 group-hover/post:opacity-100 transition-all">
+                      <div className="flex items-center gap-2 opacity-100 lg:opacity-0 group-hover/post:opacity-100 transition-all">
                         <Button 
                           onClick={() => togglePinPost(post.id, !!post.is_pinned)}
                           variant="ghost" 
                           size="icon" 
                           className={`rounded-xl transition-all ${
-                            post.is_pinned ? 'text-sky-600 bg-sky-100' : 'text-navy/10 hover:text-sky-600 hover:bg-sky-50'
+                            post.is_pinned ? 'text-sky-600 bg-sky-100' : 'text-navy/20 hover:text-sky-600 hover:bg-sky-50'
                           }`}
                         >
                           {post.is_pinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
                         </Button>
-                        {post.author_id === currentMember.id && (
-                          <Button 
-                            onClick={() => deletePost(post.id)}
-                            variant="ghost" 
-                            size="icon" 
-                            className="rounded-xl text-navy/10 hover:text-red-500 hover:bg-red-50 transition-all"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                        {post.author_id === currentMember.id && !editingPostId && (
+                          <div className="flex gap-2">
+                             <Button 
+                              onClick={() => {
+                                setEditingPostId(post.id);
+                                setEditingContent(post.content);
+                              }}
+                              variant="ghost" 
+                              size="icon" 
+                              className="rounded-xl text-navy/20 hover:text-sky-600 hover:bg-sky-50 transition-all"
+                              title="Modifier la publication"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                             <AlertDialog>
+                               <AlertDialogTrigger asChild>
+                                 <Button 
+                                   variant="ghost" 
+                                   size="icon" 
+                                   className="rounded-xl text-navy/20 hover:text-red-500 hover:bg-red-50 transition-all"
+                                   title="Supprimer la publication"
+                                 >
+                                   <Trash2 className="w-4 h-4" />
+                                 </Button>
+                               </AlertDialogTrigger>
+                               <AlertDialogContent className="rounded-[2rem] border-none shadow-3xl bg-white p-8">
+                                 <AlertDialogHeader>
+                                   <AlertDialogTitle className="text-2xl font-display font-bold text-navy tracking-tight">Supprimer cette publication ?</AlertDialogTitle>
+                                   <AlertDialogDescription className="text-navy/40 font-medium">
+                                     Êtes-vous sûr de vouloir supprimer cette publication ? Tous les contenus et fichiers joints seront définitivement effacés.
+                                   </AlertDialogDescription>
+                                 </AlertDialogHeader>
+                                 <AlertDialogFooter className="gap-3 mt-6">
+                                   <AlertDialogCancel className="rounded-xl border-navy/5 hover:bg-sky-50 font-bold">Annuler</AlertDialogCancel>
+                                   <AlertDialogAction 
+                                     onClick={() => deletePost(post.id)}
+                                     className="rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold border-none"
+                                   >
+                                     Supprimer
+                                   </AlertDialogAction>
+                                 </AlertDialogFooter>
+                               </AlertDialogContent>
+                             </AlertDialog>
+                          </div>
                         )}
                       </div>
                     </div>
                     
                     <div className="text-navy text-lg leading-relaxed font-normal p-6 bg-sky-50/30 rounded-[2rem] border border-sky-600/5 mb-8">
-                      {post.content}
+                      {editingPostId === post.id ? (
+                        <div className="space-y-4">
+                          <textarea
+                            autoFocus
+                            value={editingContent}
+                            onChange={(e) => setEditingContent(e.target.value)}
+                            className="w-full min-h-[100px] p-4 rounded-xl bg-white border border-sky-600/20 text-navy font-medium resize-none shadow-sm outline-none ring-2 ring-sky-600/5"
+                          />
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              className="bg-sky-600 hover:bg-navy text-white rounded-xl px-4"
+                              onClick={() => handleEditPost(post.id)}
+                            >
+                              <Check className="w-4 h-4 mr-2" /> Enregistrer
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-navy/40 hover:text-navy rounded-xl px-4"
+                              onClick={() => setEditingPostId(null)}
+                            >
+                              <X className="w-4 h-4 mr-2" /> Annuler
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="whitespace-pre-wrap">{post.content}</p>
+                          {post.created_at !== post.updated_at && (
+                            <p className="text-[10px] italic font-bold text-navy/30">
+                              (modifié)
+                            </p>
+                          )}
+                        </div>
+                      )}
 
                       {post.attachment_url && (
                         <div className="mt-6">
@@ -366,7 +459,7 @@ export default function WorkspaceGroups({ currentMember }: WorkspaceGroupsProps)
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+               ))}
               
               {posts.length === 0 && (
                 <div className="p-24 text-center space-y-4">

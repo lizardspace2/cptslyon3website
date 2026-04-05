@@ -141,6 +141,22 @@ export function useWorkspace(memberId: string | undefined) {
     }
   };
 
+  const editPost = async (postId: string, content: string) => {
+    if (!memberId || !content.trim()) return;
+
+    const { error } = await supabase
+      .from('workspace_posts')
+      .update({ content })
+      .eq('id', postId)
+      .eq('author_id', memberId);
+
+    if (error) {
+      toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de modifier la publication.' });
+    } else if (activeGroupId) {
+      fetchPosts(activeGroupId);
+    }
+  };
+
   const togglePinPost = async (postId: string, isPinned: boolean) => {
     const { error } = await supabase
       .from('workspace_posts')
@@ -166,6 +182,7 @@ export function useWorkspace(memberId: string | undefined) {
     createGroup,
     createPost,
     deletePost,
+    editPost,
     togglePinPost,
     uploadFile,
     refreshGroups: fetchGroups,

@@ -16,6 +16,7 @@ export interface MessagingMessage {
   sender_id: string;
   content: string;
   created_at: string;
+  updated_at: string;
   sender?: Member;
   attachment_url?: string;
   attachment_name?: string;
@@ -37,6 +38,7 @@ export interface WorkspacePost {
   author_id: string;
   content: string;
   created_at: string;
+  updated_at: string;
   author?: Member;
   comments_count?: number;
   is_pinned?: boolean;

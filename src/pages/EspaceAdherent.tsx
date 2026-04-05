@@ -7,7 +7,7 @@ import {
   Shield, Users, Heart, CheckCircle2, ArrowRight, Mail, Phone, HelpCircle,
   Sparkles, LogOut, Loader2, User, BookOpen, Newspaper, FileText,
   Eye, EyeOff, Clock, XCircle, Save, Home, MessageSquare, LayoutDashboard,
-  Camera
+  Camera, Trash2
 } from "lucide-react";
 import MessagingCenter from "@/components/messaging/MessagingCenter";
 import WorkspaceGroups from "@/components/messaging/WorkspaceGroups";
@@ -19,6 +19,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
@@ -354,6 +365,24 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
     }
   };
 
+  const handleRemovePhoto = async () => {
+    try {
+      // 1. Storage cleanup if exists
+      if (member.photo_url) {
+        const path = member.photo_url.split('/cpts-workspace/')[1];
+        if (path) {
+          await supabase.storage.from('cpts-workspace').remove([path]);
+        }
+      }
+
+      // 2. Clear from DB
+      await onUpdateProfile({ photo_url: null });
+      toast({ title: "Photo supprimée", description: "Votre profil affiche désormais vos initiales." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erreur", description: "Échec de la suppression." });
+    }
+  };
+
 
 
   const { data: news } = useQuery({
@@ -512,7 +541,7 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
                              )}
                              <label 
                                htmlFor="profile-photo-upload" 
-                               className="absolute -bottom-2 -right-2 w-10 h-10 bg-white shadow-xl rounded-2xl flex items-center justify-center border border-navy/5 cursor-pointer hover:bg-sky-50 transition-all text-sky-600"
+                               className="absolute -bottom-2 -right-2 w-10 h-10 bg-white shadow-xl rounded-2xl flex items-center justify-center border border-navy/5 cursor-pointer hover:bg-sky-50 transition-all text-sky-600 z-10"
                              >
                                <Camera className="w-5 h-5" />
                                <input 
@@ -523,6 +552,35 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
                                  onChange={handlePhotoUpload} 
                                />
                              </label>
+                             {member.photo_url && (
+                               <AlertDialog>
+                                 <AlertDialogTrigger asChild>
+                                   <button 
+                                     className="absolute -top-2 -right-2 w-10 h-10 bg-white shadow-xl rounded-2xl flex items-center justify-center border border-navy/5 cursor-pointer hover:bg-red-50 transition-all text-red-500 z-10"
+                                     title="Supprimer la photo"
+                                   >
+                                     <Trash2 className="w-4 h-4" />
+                                   </button>
+                                 </AlertDialogTrigger>
+                                 <AlertDialogContent className="rounded-[2rem] border-none shadow-3xl bg-white p-8">
+                                   <AlertDialogHeader>
+                                     <AlertDialogTitle className="text-2xl font-display font-bold text-navy tracking-tight">Supprimer la photo ?</AlertDialogTitle>
+                                     <AlertDialogDescription className="text-navy/40 font-medium">
+                                       Êtes-vous sûr de vouloir supprimer votre photo de profil ? Cette action est irréversible.
+                                     </AlertDialogDescription>
+                                   </AlertDialogHeader>
+                                   <AlertDialogFooter className="gap-3 mt-6">
+                                     <AlertDialogCancel className="rounded-xl border-navy/5 hover:bg-sky-50 font-bold">Annuler</AlertDialogCancel>
+                                     <AlertDialogAction 
+                                       onClick={handleRemovePhoto}
+                                       className="rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold border-none"
+                                     >
+                                       Supprimer
+                                     </AlertDialogAction>
+                                   </AlertDialogFooter>
+                                 </AlertDialogContent>
+                               </AlertDialog>
+                             )}
                            </div>
                            <div>
                              <h2 className="text-3xl font-display font-bold text-navy tracking-tight">Mon Profil</h2>

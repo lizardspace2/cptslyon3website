@@ -5,7 +5,8 @@ import { MessagingRoom, MessagingMessage } from '@/types/messaging';
 import { 
   Search, Send, MessageSquare, User, Trash2, 
   MoreVertical, Hash, Smile, Paperclip, Loader2, Plus, 
-  FileText, ExternalLink, Download, Image as ImageIcon
+  FileText, ExternalLink, Download, Image as ImageIcon,
+  Pencil, Check, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
@@ -45,6 +57,7 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
     typingMembers,
     sendMessage, 
     deleteMessage,
+    editMessage,
     createDirectMessage,
     sendTyping,
     uploadFile
@@ -56,6 +69,8 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
   const [allMembers, setAllMembers] = useState<Member[]>([]);
   const [memberSearch, setMemberSearch] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
 
   const activeRoom = rooms.find(r => r.id === activeRoomId);
 
@@ -66,6 +81,14 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
       .eq('status', 'approved')
       .neq('id', currentMember.id);
     if (data) setAllMembers(data as any);
+  };
+
+  const handleEditMessage = async (id: string) => {
+    if (editingContent.trim()) {
+      await editMessage(id, editingContent);
+      setEditingMessageId(null);
+      setEditingContent('');
+    }
   };
 
   const handleSendMessage = () => {
@@ -98,7 +121,11 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
   };
 
   const addEmoji = (emoji: string) => {
-    setMessageInput(prev => prev + emoji);
+    if (editingMessageId) {
+      setEditingContent(prev => prev + emoji);
+    } else {
+      setMessageInput(prev => prev + emoji);
+    }
   };
 
   return (
@@ -133,7 +160,7 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
                   </div>
                   <ScrollArea className="h-[300px] pr-4">
                     <div className="space-y-2">
-                      {allMembers
+                       {allMembers
                         .filter(m => `${m.first_name} ${m.last_name}`.toLowerCase().includes(memberSearch.toLowerCase()))
                         .map(member => (
                         <button
@@ -275,7 +302,49 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
                               ? 'bg-navy text-white rounded-tr-none shadow-xl shadow-navy/10' 
                               : 'bg-white text-navy rounded-tl-none border border-navy/5 shadow-sm'
                           }`}>
-                            {msg.content}
+                            {editingMessageId === msg.id ? (
+                              <div className="space-y-2 py-1 min-w-[200px]">
+                                <textarea
+                                  autoFocus
+                                  value={editingContent}
+                                  onChange={(e) => setEditingContent(e.target.value)}
+                                  className={`w-full p-2 rounded-xl text-sm font-medium resize-none border-none outline-none ring-1 ring-sky-500/30 ${
+                                    isOwn ? 'bg-white/10 text-white placeholder:text-white/40' : 'bg-sky-50 text-navy'
+                                  }`}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                      e.preventDefault();
+                                      handleEditMessage(msg.id);
+                                    }
+                                  }}
+                                />
+                                <div className="flex justify-end gap-1">
+                                  <button 
+                                    className="flex items-center justify-center h-7 w-7 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                                    onClick={() => handleEditMessage(msg.id)}
+                                  >
+                                    <Check className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button 
+                                    className="flex items-center justify-center h-7 w-7 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
+                                    onClick={() => setEditingMessageId(null)}
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="space-y-1">
+                                <p className="leading-relaxed whitespace-pre-wrap">
+                                  {msg.content}
+                                </p>
+                                {msg.created_at !== msg.updated_at && (
+                                  <p className={`text-[9px] italic opacity-40 font-bold ${isOwn ? 'text-white' : 'text-navy'}`}>
+                                    (modifié)
+                                  </p>
+                                )}
+                              </div>
+                            )}
 
                             {msg.attachment_url && (
                               <div className="mt-2">
@@ -320,14 +389,47 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
                             <span className="text-[9px] font-black text-navy/20 uppercase tracking-tighter">
                               {format(new Date(msg.created_at), 'HH:mm', { locale: fr })}
                             </span>
-                            {isOwn && (
-                              <button 
-                                onClick={() => deleteMessage(msg.id)}
-                                className="text-navy/10 hover:text-red-500 transition-colors"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            )}
+                            {isOwn && !editingMessageId && (
+                               <div className="flex items-center gap-1">
+                                 <button 
+                                   onClick={() => {
+                                     setEditingMessageId(msg.id);
+                                     setEditingContent(msg.content);
+                                   }}
+                                   className="w-6 h-6 rounded-lg flex items-center justify-center text-navy/20 hover:text-sky-600 hover:bg-sky-50 transition-all"
+                                   title="Modifier le message"
+                                 >
+                                   <Pencil className="w-3 h-3" />
+                                 </button>
+                                 <AlertDialog>
+                                   <AlertDialogTrigger asChild>
+                                     <button 
+                                       className="w-6 h-6 rounded-lg flex items-center justify-center text-navy/20 hover:text-red-500 hover:bg-red-50 transition-all"
+                                       title="Supprimer le message et le fichier"
+                                     >
+                                       <Trash2 className="w-3.5 h-3.5" />
+                                     </button>
+                                   </AlertDialogTrigger>
+                                   <AlertDialogContent className="rounded-[2rem] border-none shadow-3xl bg-white p-8">
+                                     <AlertDialogHeader>
+                                       <AlertDialogTitle className="text-2xl font-display font-bold text-navy tracking-tight">Supprimer ce message ?</AlertDialogTitle>
+                                       <AlertDialogDescription className="text-navy/40 font-medium">
+                                         Êtes-vous sûr de vouloir supprimer ce message ? Si un fichier est joint, il sera également supprimé définitivement.
+                                       </AlertDialogDescription>
+                                     </AlertDialogHeader>
+                                     <AlertDialogFooter className="gap-3 mt-6">
+                                       <AlertDialogCancel className="rounded-xl border-navy/5 hover:bg-sky-50 font-bold">Annuler</AlertDialogCancel>
+                                       <AlertDialogAction 
+                                         onClick={() => deleteMessage(msg.id)}
+                                         className="rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold border-none"
+                                       >
+                                         Supprimer
+                                       </AlertDialogAction>
+                                     </AlertDialogFooter>
+                                   </AlertDialogContent>
+                                 </AlertDialog>
+                               </div>
+                             )}
                           </div>
                         </div>
                       </div>
