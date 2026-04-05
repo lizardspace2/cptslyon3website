@@ -343,7 +343,12 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
       await onUpdateProfile({ photo_url: publicUrl });
       toast({ title: "Photo mise à jour", description: "Votre nouvelle photo de profil est en ligne." });
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Erreur", description: "Échec de l'envoi de la photo." });
+      console.error("Upload error details:", err);
+      toast({ 
+        variant: "destructive", 
+        title: "Erreur d'envoi", 
+        description: err.message || "Vérifiez que le bucket 'cpts-workspace' existe dans Supabase Storage." 
+      });
     } finally {
       setIsUploading(false);
     }
