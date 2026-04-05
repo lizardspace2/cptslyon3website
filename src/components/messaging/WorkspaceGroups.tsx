@@ -1,18 +1,26 @@
-import { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { Member } from '@/hooks/useAuth';
 import { WorkspaceGroup, WorkspacePost } from '@/types/messaging';
 import { 
   Plus, Users, MessageCircle, Heart, Share2, 
-  Trash2, Search, Filter, Hash, Star, LayoutGrid, Calendar, Pin, PinOff 
+  Trash2, Search, Filter, Hash, Star, LayoutGrid, Calendar, Pin, PinOff,
+  FileText, ExternalLink, Loader2
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -29,11 +37,24 @@ export default function WorkspaceGroups({ currentMember }: WorkspaceGroupsProps)
     loading, 
     createPost, 
     deletePost,
-    togglePinPost 
+    togglePinPost,
+    uploadFile,
+    createGroup 
   } = useWorkspace(currentMember.id);
   
   const [postInput, setPostInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newGroup, setNewGroup] = useState({ name: '', description: '', tag: 'Général' });
+
+  const handleCreateGroup = async () => {
+    if (newGroup.name.trim()) {
+      await createGroup(newGroup.name, newGroup.description, newGroup.tag);
+      setNewGroup({ name: '', description: '', tag: 'Général' });
+      setIsCreateDialogOpen(false);
+    }
+  };
 
   const activeGroup = groups.find(g => g.id === activeGroupId);
 
@@ -44,15 +65,72 @@ export default function WorkspaceGroups({ currentMember }: WorkspaceGroupsProps)
     }
   };
 
+  const onFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const attachment = await uploadFile(file);
+    if (attachment) {
+      createPost("", attachment);
+    }
+    setIsUploading(false);
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
       {/* Group Sidebar */}
       <aside className="lg:col-span-1 space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-display font-bold text-navy tracking-tight uppercase tracking-widest text-xs">Groupes Thématiques</h2>
-          <Button variant="ghost" size="icon" className="rounded-full hover:bg-sky-50 text-sky-600">
-            <Plus className="w-5 h-5" />
-          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-sky-50 text-sky-600">
+                <Plus className="w-5 h-5" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="rounded-[2.5rem] border-none shadow-3xl max-w-md p-8 bg-white">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-display font-bold text-navy tracking-tight mb-4">Créer un groupe</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-navy/40 uppercase tracking-widest px-1">Nom du groupe</label>
+                  <Input 
+                    placeholder="Ex: Cardiologie, Coordination..." 
+                    className="h-12 rounded-2xl border-navy/5 bg-sky-50/30 font-bold"
+                    value={newGroup.name}
+                    onChange={(e) => setNewGroup(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-navy/40 uppercase tracking-widest px-1">Description</label>
+                  <Input 
+                    placeholder="Objectif de ce groupe..." 
+                    className="h-12 rounded-2xl border-navy/5 bg-sky-50/30 font-bold"
+                    value={newGroup.description}
+                    onChange={(e) => setNewGroup(prev => ({ ...prev, description: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-navy/40 uppercase tracking-widest px-1">Tag (Catégorie)</label>
+                  <Input 
+                    placeholder="Ex: Médical, Administratif..." 
+                    className="h-12 rounded-2xl border-navy/5 bg-sky-50/30 font-bold"
+                    value={newGroup.tag}
+                    onChange={(e) => setNewGroup(prev => ({ ...prev, tag: e.target.value }))}
+                  />
+                </div>
+                <Button 
+                  onClick={handleCreateGroup}
+                  disabled={!newGroup.name.trim()}
+                  className="w-full bg-navy hover:bg-sky-600 text-white rounded-2xl h-12 font-black shadow-xl transition-all"
+                >
+                  Créer le groupe
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="relative">
@@ -139,8 +217,22 @@ export default function WorkspaceGroups({ currentMember }: WorkspaceGroupsProps)
                     />
                     <div className="flex items-center justify-between">
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" className="rounded-xl text-navy/40 hover:text-navy hover:bg-sky-50 gap-2">
-                          <LayoutGrid className="w-4 h-4" /> Media
+                        <input 
+                          type="file" 
+                          id="workspace-file-upload" 
+                          className="hidden" 
+                          onChange={onFileSelect}
+                          accept=".pdf,.docx,.jpg,.jpeg,.png"
+                        />
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          asChild
+                          className="rounded-xl text-navy/40 hover:text-navy hover:bg-sky-50 gap-2 cursor-pointer"
+                        >
+                          <label htmlFor="workspace-file-upload">
+                            {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LayoutGrid className="w-4 h-4" />} Media
+                          </label>
                         </Button>
                         <Button variant="ghost" size="sm" className="rounded-xl text-navy/40 hover:text-navy hover:bg-sky-50 gap-2">
                           <Calendar className="w-4 h-4" /> Événement
@@ -148,7 +240,7 @@ export default function WorkspaceGroups({ currentMember }: WorkspaceGroupsProps)
                       </div>
                       <Button 
                         onClick={handleCreatePost}
-                        disabled={!postInput.trim()}
+                        disabled={!postInput.trim() && !isUploading}
                         className="bg-sky-600 hover:bg-navy text-white rounded-[1.5rem] px-8 h-12 font-black shadow-xl shadow-sky-600/10 transition-all hover:scale-105"
                       >
                         Publier
@@ -218,6 +310,39 @@ export default function WorkspaceGroups({ currentMember }: WorkspaceGroupsProps)
                     
                     <div className="text-navy text-lg leading-relaxed font-normal p-6 bg-sky-50/30 rounded-[2rem] border border-sky-600/5 mb-8">
                       {post.content}
+
+                      {post.attachment_url && (
+                        <div className="mt-6">
+                           {post.attachment_type?.startsWith('image/') ? (
+                            <div className="relative group/postimg cursor-pointer" onClick={() => window.open(post.attachment_url, '_blank')}>
+                              <img 
+                                src={post.attachment_url} 
+                                alt={post.attachment_name} 
+                                className="max-h-[400px] rounded-[2rem] border border-navy/5 shadow-xl transition-all group-hover/postimg:brightness-90"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/postimg:opacity-100 transition-opacity">
+                                <ExternalLink className="w-10 h-10 text-white drop-shadow-2xl" />
+                              </div>
+                            </div>
+                          ) : (
+                            <a 
+                              href={post.attachment_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-6 p-6 rounded-[2rem] bg-white border border-navy/5 hover:border-sky-600/20 hover:shadow-xl transition-all group/file"
+                            >
+                              <div className="w-16 h-16 rounded-2xl bg-sky-50 flex items-center justify-center group-hover/file:bg-sky-600 group-hover/file:text-white transition-colors">
+                                <FileText className="w-8 h-8" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-navy truncate uppercase tracking-widest">{post.attachment_name}</p>
+                                <p className="text-[10px] text-navy/40 font-black mt-1">CLIQUEZ POUR CONSULTER LE DOCUMENT</p>
+                              </div>
+                              <ExternalLink className="w-6 h-6 text-navy/10" />
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t border-navy/5">

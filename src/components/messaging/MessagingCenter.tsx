@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import { useMessaging } from '@/hooks/useMessaging';
 import { Member } from '@/hooks/useAuth';
 import { MessagingRoom, MessagingMessage } from '@/types/messaging';
 import { 
   Search, Send, MessageSquare, User, Trash2, 
-  MoreVertical, Hash, Smile, Paperclip, Loader2, Plus 
+  MoreVertical, Hash, Smile, Paperclip, Loader2, Plus, 
+  FileText, ExternalLink, Download, Image as ImageIcon
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -46,7 +46,8 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
     sendMessage, 
     deleteMessage,
     createDirectMessage,
-    sendTyping
+    sendTyping,
+    uploadFile
   } = useMessaging(currentMember.id);
   
   const [messageInput, setMessageInput] = useState('');
@@ -54,6 +55,9 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [allMembers, setAllMembers] = useState<Member[]>([]);
   const [memberSearch, setMemberSearch] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+
+  const activeRoom = rooms.find(r => r.id === activeRoomId);
 
   const fetchMembers = async () => {
     const { data } = await supabase
@@ -63,8 +67,6 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
       .neq('id', currentMember.id);
     if (data) setAllMembers(data as any);
   };
-
-  const activeRoom = rooms.find(r => r.id === activeRoomId);
 
   const handleSendMessage = () => {
     if (messageInput.trim()) {
@@ -81,6 +83,18 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
     } else {
       sendTyping(false);
     }
+  };
+
+  const onFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const attachment = await uploadFile(file);
+    if (attachment) {
+      sendMessage("", attachment);
+    }
+    setIsUploading(false);
   };
 
   const addEmoji = (emoji: string) => {
@@ -184,7 +198,6 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
                       {room.is_group ? <Hash className="w-5 h-5" /> : <User className="w-5 h-5" />}
                     </AvatarFallback>
                   </Avatar>
-                  {/* Presence indicator for private rooms */}
                   {!room.is_group && room.members?.some(m => m.id !== currentMember.id && onlineMembers.includes(m.id)) && (
                     <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full animate-pulse shadow-sm" />
                   )}
@@ -263,6 +276,45 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
                               : 'bg-white text-navy rounded-tl-none border border-navy/5 shadow-sm'
                           }`}>
                             {msg.content}
+
+                            {msg.attachment_url && (
+                              <div className="mt-2">
+                                {msg.attachment_type?.startsWith('image/') ? (
+                                  <div className="relative group/img cursor-pointer" onClick={() => window.open(msg.attachment_url, '_blank')}>
+                                    <img 
+                                      src={msg.attachment_url} 
+                                      alt={msg.attachment_name} 
+                                      className="max-w-[240px] rounded-2xl border border-navy/5 shadow-sm transition-all group-hover/img:brightness-90"
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
+                                      <ExternalLink className="w-6 h-6 text-white drop-shadow-lg" />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <a 
+                                    href={msg.attachment_url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                                      isOwn 
+                                        ? 'bg-white/10 border-white/20 text-white hover:bg-white/20' 
+                                        : 'bg-sky-50/50 border-navy/5 text-navy hover:bg-white hover:shadow-md'
+                                    }`}
+                                  >
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                      isOwn ? 'bg-white/20' : 'bg-white shadow-sm'
+                                    }`}>
+                                      <FileText className="w-5 h-5" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-[11px] font-bold truncate uppercase tracking-widest">{msg.attachment_name}</p>
+                                      <p className="text-[9px] opacity-40 font-black">DOCUMENT</p>
+                                    </div>
+                                    <ExternalLink className="w-4 h-4 opacity-40 shrink-0" />
+                                  </a>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div className={`flex items-center gap-2 px-1 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
                             <span className="text-[9px] font-black text-navy/20 uppercase tracking-tighter">
@@ -309,6 +361,26 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
                     </div>
                   </PopoverContent>
                 </Popover>
+
+                <div className="relative">
+                  <input 
+                    type="file" 
+                    id="file-upload" 
+                    className="hidden" 
+                    onChange={onFileSelect}
+                    accept=".pdf,.docx,.jpg,.jpeg,.png"
+                  />
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    asChild
+                    className="text-navy/30 hover:text-navy hover:bg-white rounded-2xl cursor-pointer"
+                  >
+                    <label htmlFor="file-upload">
+                      {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
+                    </label>
+                  </Button>
+                </div>
                 
                 <Input 
                   value={messageInput}
@@ -320,7 +392,7 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
                 
                 <Button 
                   onClick={handleSendMessage}
-                  disabled={!messageInput.trim()}
+                  disabled={!messageInput.trim() && !isUploading}
                   className="bg-navy hover:bg-sky-600 text-white rounded-2xl h-10 w-10 p-0 shadow-lg"
                 >
                   <Send className="w-4 h-4 ml-0.5" />

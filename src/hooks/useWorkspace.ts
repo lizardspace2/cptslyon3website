@@ -29,7 +29,7 @@ export function useWorkspace(memberId: string | undefined) {
       .from('workspace_posts')
       .select('*, author:members(*)')
       .eq('group_id', groupId)
-      .order('is_pinned', { ascending: false }) // Pinned first
+      .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -65,13 +65,45 @@ export function useWorkspace(memberId: string | undefined) {
     return data;
   };
 
-  const createPost = async (content: string) => {
+  const uploadFile = async (file: File) => {
+    if (!memberId || !activeGroupId) return null;
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `workspace/${activeGroupId}/${fileName}`;
+
+    const { error: uploadError, data } = await supabase.storage
+      .from('cpts-workspace')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      toast({ variant: 'destructive', title: 'Erreur', description: 'Échec de l\'envoi du fichier.' });
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('cpts-workspace')
+      .getPublicUrl(filePath);
+
+    return { 
+      url: publicUrl, 
+      name: file.name, 
+      type: file.type,
+      storagePath: filePath 
+    };
+  };
+
+  const createPost = async (content: string, attachment?: { url: string, name: string, type: string }) => {
     if (!activeGroupId || !memberId) return;
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('workspace_posts')
-      .insert({ group_id: activeGroupId, author_id: memberId, content })
-      .select()
-      .single();
+      .insert({ 
+        group_id: activeGroupId, 
+        author_id: memberId, 
+        content,
+        attachment_url: attachment?.url,
+        attachment_name: attachment?.name,
+        attachment_type: attachment?.type
+      });
 
     if (error) {
       toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de publier le message.' });
@@ -82,6 +114,20 @@ export function useWorkspace(memberId: string | undefined) {
 
   const deletePost = async (postId: string) => {
     if (!memberId) return;
+    
+    const { data: post } = await supabase
+      .from('workspace_posts')
+      .select('attachment_url')
+      .eq('id', postId)
+      .single();
+
+    if (post?.attachment_url) {
+      const path = post.attachment_url.split('/public/cpts-workspace/')[1];
+      if (path) {
+        await supabase.storage.from('cpts-workspace').remove([path]);
+      }
+    }
+
     const { error } = await supabase
       .from('workspace_posts')
       .delete()
@@ -107,7 +153,7 @@ export function useWorkspace(memberId: string | undefined) {
     if (error) {
       toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de modifier l\'épinglage.' });
     } else if (activeGroupId) {
-      fetchPosts(activeGroupId); // Refresh UI
+      fetchPosts(activeGroupId);
     }
   };
 
@@ -121,6 +167,7 @@ export function useWorkspace(memberId: string | undefined) {
     createPost,
     deletePost,
     togglePinPost,
+    uploadFile,
     refreshGroups: fetchGroups,
   };
 }

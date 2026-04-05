@@ -70,7 +70,6 @@ export function useMessaging(memberId: string | undefined) {
     setMessages(data as any);
   }, []);
 
-  // Realtime subscription (Presence, Broadcast, Postgres Changes)
   useEffect(() => {
     if (!memberId) return;
 
@@ -156,17 +155,43 @@ export function useMessaging(memberId: string | undefined) {
     });
   };
 
-  useEffect(() => {
-    fetchRooms();
-  }, [fetchRooms]);
+  const uploadFile = async (file: File) => {
+    if (!memberId) return null;
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `messaging/${activeRoomId}/${fileName}`;
 
-  const sendMessage = async (content: string) => {
-    if (!activeRoomId || !memberId || !content.trim()) return;
+    const { error: uploadError, data } = await supabase.storage
+      .from('cpts-workspace')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      toast({ variant: 'destructive', title: 'Erreur', description: 'Échec de l\'envoi du fichier.' });
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('cpts-workspace')
+      .getPublicUrl(filePath);
+
+    return { 
+      url: publicUrl, 
+      name: file.name, 
+      type: file.type,
+      storagePath: filePath 
+    };
+  };
+
+  const sendMessage = async (content: string, attachment?: { url: string, name: string, type: string }) => {
+    if (!activeRoomId || !memberId || (!content.trim() && !attachment)) return;
 
     const { error } = await supabase.from('messaging_messages').insert({
       room_id: activeRoomId,
       sender_id: memberId,
       content,
+      attachment_url: attachment?.url,
+      attachment_name: attachment?.name,
+      attachment_type: attachment?.type
     });
 
     if (error) {
@@ -181,6 +206,21 @@ export function useMessaging(memberId: string | undefined) {
 
   const deleteMessage = async (messageId: string) => {
     if (!memberId) return;
+    
+    // First, find if there's an attachment to delete from storage
+    const { data: message } = await supabase
+      .from('messaging_messages')
+      .select('attachment_url')
+      .eq('id', messageId)
+      .single();
+
+    if (message?.attachment_url) {
+      const path = message.attachment_url.split('/public/cpts-workspace/')[1];
+      if (path) {
+        await supabase.storage.from('cpts-workspace').remove([path]);
+      }
+    }
+
     const { error } = await supabase
       .from('messaging_messages')
       .delete()
@@ -194,7 +234,6 @@ export function useMessaging(memberId: string | undefined) {
 
   const createDirectMessage = async (targetMemberId: string) => {
     if (!memberId) return;
-
     const { data: myRooms } = await supabase.from('messaging_room_members').select('room_id').eq('member_id', memberId);
     const { data: targetRooms } = await supabase.from('messaging_room_members').select('room_id').eq('member_id', targetMemberId);
     const commonRooms = myRooms?.filter(mr => targetRooms?.some(tr => tr.room_id === mr.room_id));
@@ -216,6 +255,10 @@ export function useMessaging(memberId: string | undefined) {
     setActiveRoomId(room.id);
   };
 
+  useEffect(() => {
+    fetchRooms();
+  }, [fetchRooms]);
+
   return {
     rooms,
     messages,
@@ -228,6 +271,7 @@ export function useMessaging(memberId: string | undefined) {
     deleteMessage,
     createDirectMessage,
     sendTyping,
+    uploadFile,
     refreshRooms: fetchRooms,
   };
 }
