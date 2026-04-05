@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, ChangeEvent } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PageBanner from "@/components/PageBanner";
@@ -6,7 +6,8 @@ import { motion } from "framer-motion";
 import {
   Shield, Users, Heart, CheckCircle2, ArrowRight, Mail, Phone, HelpCircle,
   Sparkles, LogOut, Loader2, User, BookOpen, Newspaper, FileText,
-  Eye, EyeOff, Clock, XCircle, Save, Home, MessageSquare, LayoutDashboard
+  Eye, EyeOff, Clock, XCircle, Save, Home, MessageSquare, LayoutDashboard,
+  Camera
 } from "lucide-react";
 import MessagingCenter from "@/components/messaging/MessagingCenter";
 import WorkspaceGroups from "@/components/messaging/WorkspaceGroups";
@@ -26,6 +27,7 @@ import { useAuth, type Member } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const titles = ["Dr.", "Pr.", "Mme.", "M.", "Mlle.", "Me."];
 
@@ -316,6 +318,36 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
     specialty: member.specialty || "", public_phone: member.public_phone || "", private_phone: member.private_phone || "", address: member.address || "",
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handlePhotoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${member.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('cpts-workspace')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('cpts-workspace')
+        .getPublicUrl(filePath);
+
+      await onUpdateProfile({ photo_url: publicUrl });
+      toast({ title: "Photo mise à jour", description: "Votre nouvelle photo de profil est en ligne." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erreur", description: "Échec de l'envoi de la photo." });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
 
 
@@ -431,9 +463,12 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
                   <TabsContent value="home" className="mt-0">
                     <Card className="rounded-[3rem] border border-navy/5 shadow-3xl bg-white p-12">
                       <div className="flex items-center gap-6 mb-8">
-                        <div className="w-20 h-20 bg-sky-50 rounded-[2rem] flex items-center justify-center shadow-xl border border-sky-100">
-                          <User className="w-10 h-10 text-sky-600" />
-                        </div>
+                        <Avatar className="w-24 h-24 rounded-[2rem] shadow-xl border-4 border-white">
+                          <AvatarImage src={member.photo_url || undefined} className="object-cover" />
+                          <AvatarFallback className="bg-sky-50 text-sky-600 text-2xl font-black">
+                            {member.first_name?.[0]}
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
                           <h2 className="text-3xl font-display font-bold text-navy tracking-tight">{member.title} {member.first_name} {member.last_name}</h2>
                           <p className="text-navy/40 font-bold italic">{member.specialty}</p>
@@ -453,11 +488,45 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
                     <WorkspaceGroups currentMember={member} />
                   </TabsContent>
 
-                  {/* PROFILE */}
-                  <TabsContent value="profile" className="mt-0">
-                    <Card className="rounded-[3rem] border border-navy/5 shadow-3xl bg-white p-12">
-                      <h2 className="text-3xl font-display font-bold text-navy tracking-tight mb-8">Mon Profil</h2>
-                      <div className="grid gap-6">
+                   {/* PROFILE */}
+                   <TabsContent value="profile" className="mt-0">
+                     <Card className="rounded-[3rem] border border-navy/5 shadow-3xl bg-white p-12">
+                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
+                         <div className="flex items-center gap-8">
+                           <div className="relative group">
+                             <Avatar className="w-32 h-32 rounded-[2.5rem] shadow-2xl border-4 border-white transition-all group-hover:brightness-90">
+                               <AvatarImage src={member.photo_url || undefined} className="object-cover" />
+                               <AvatarFallback className="bg-sky-50 text-sky-600 text-4xl font-black">
+                                 {member.first_name?.[0]}
+                               </AvatarFallback>
+                             </Avatar>
+                             {isUploading && (
+                               <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-[2.5rem] backdrop-blur-sm">
+                                 <Loader2 className="w-8 h-8 text-sky-600 animate-spin" />
+                               </div>
+                             )}
+                             <label 
+                               htmlFor="profile-photo-upload" 
+                               className="absolute -bottom-2 -right-2 w-10 h-10 bg-white shadow-xl rounded-2xl flex items-center justify-center border border-navy/5 cursor-pointer hover:bg-sky-50 transition-all text-sky-600"
+                             >
+                               <Camera className="w-5 h-5" />
+                               <input 
+                                 type="file" 
+                                 id="profile-photo-upload" 
+                                 className="hidden" 
+                                 accept="image/*" 
+                                 onChange={handlePhotoUpload} 
+                               />
+                             </label>
+                           </div>
+                           <div>
+                             <h2 className="text-3xl font-display font-bold text-navy tracking-tight">Mon Profil</h2>
+                             <p className="text-navy/40 font-medium italic mt-1">Personnalisez votre apparence sur l'espace adhérent</p>
+                           </div>
+                         </div>
+                       </div>
+
+                       <div className="grid gap-6">
                         <div className="grid grid-cols-3 gap-4">
                           <div className="space-y-2">
                             <Label className={labelCls}>Titre</Label>
