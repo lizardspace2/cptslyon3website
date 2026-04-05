@@ -7,6 +7,7 @@ export interface MessagingRoom {
   created_at: string;
   last_message_at: string;
   members?: Member[];
+  unread_count: number;
 }
 
 export interface MessagingMessage {

@@ -4,7 +4,7 @@ import { Member } from '@/hooks/useAuth';
 import { MessagingRoom, MessagingMessage } from '@/types/messaging';
 import { 
   Search, Send, MessageSquare, User, Trash2, 
-  MoreVertical, Hash, Smile, Paperclip, Loader2 
+  MoreVertical, Hash, Smile, Paperclip, Loader2, Plus 
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,15 @@ import {
   PopoverContent, 
   PopoverTrigger 
 } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -32,12 +41,28 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
     activeRoomId, 
     setActiveRoomId, 
     loading, 
+    onlineMembers,
+    typingMembers,
     sendMessage, 
-    deleteMessage 
+    deleteMessage,
+    createDirectMessage,
+    sendTyping
   } = useMessaging(currentMember.id);
   
   const [messageInput, setMessageInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [allMembers, setAllMembers] = useState<Member[]>([]);
+  const [memberSearch, setMemberSearch] = useState('');
+
+  const fetchMembers = async () => {
+    const { data } = await supabase
+      .from('members')
+      .select('*')
+      .eq('status', 'approved')
+      .neq('id', currentMember.id);
+    if (data) setAllMembers(data as any);
+  };
 
   const activeRoom = rooms.find(r => r.id === activeRoomId);
 
@@ -45,6 +70,16 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
     if (messageInput.trim()) {
       sendMessage(messageInput);
       setMessageInput('');
+      sendTyping(false);
+    }
+  };
+
+  const handleInputChange = (val: string) => {
+    setMessageInput(val);
+    if (val.length > 0) {
+      sendTyping(true);
+    } else {
+      sendTyping(false);
     }
   };
 
@@ -57,7 +92,60 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
       {/* Sidebar: Rooms List */}
       <aside className="w-80 border-r border-navy/5 flex flex-col bg-sky-50/20">
         <div className="p-6 space-y-4">
-          <h2 className="text-xl font-display font-bold text-navy tracking-tight">Messages</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-display font-bold text-navy tracking-tight">Messages</h2>
+            <Dialog open={isSearchOpen} onOpenChange={(open) => {
+              setIsSearchOpen(open);
+              if (open) fetchMembers();
+            }}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white text-sky-600">
+                  <Plus className="w-5 h-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="rounded-[2.5rem] border-none shadow-3xl max-w-md p-8 bg-white">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-display font-bold text-navy tracking-tight mb-4">Nouvelle conversation</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+                    <Input 
+                      placeholder="Rechercher un confrère..." 
+                      className="pl-10 h-12 rounded-2xl border-navy/5 bg-sky-50/30 font-bold"
+                      value={memberSearch}
+                      onChange={(e) => setMemberSearch(e.target.value)}
+                    />
+                  </div>
+                  <ScrollArea className="h-[300px] pr-4">
+                    <div className="space-y-2">
+                      {allMembers
+                        .filter(m => `${m.first_name} ${m.last_name}`.toLowerCase().includes(memberSearch.toLowerCase()))
+                        .map(member => (
+                        <button
+                          key={member.id}
+                          onClick={() => {
+                            createDirectMessage(member.id);
+                            setIsSearchOpen(false);
+                          }}
+                          className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-sky-50 transition-all text-left"
+                        >
+                          <Avatar className="w-10 h-10 rounded-xl">
+                            <AvatarImage src={member.photo_url} />
+                            <AvatarFallback className="bg-sky-100 text-sky-600 font-bold">{member.first_name?.[0]}{member.last_name?.[0]}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-bold text-navy text-sm">{member.title} {member.first_name} {member.last_name}</p>
+                            <p className="text-[10px] text-navy/40 font-medium uppercase tracking-widest">{member.specialty}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
             <Input 
@@ -90,11 +178,17 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
                     : 'hover:bg-white/60'
                 }`}
               >
-                <Avatar className="w-12 h-12 rounded-2xl border-2 border-white shadow-md">
-                  <AvatarFallback className="bg-sky-100 text-sky-600 font-bold">
-                    {room.is_group ? <Hash className="w-5 h-5" /> : <User className="w-5 h-5" />}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="w-12 h-12 rounded-2xl border-2 border-white shadow-md">
+                    <AvatarFallback className="bg-sky-100 text-sky-600 font-bold">
+                      {room.is_group ? <Hash className="w-5 h-5" /> : <User className="w-5 h-5" />}
+                    </AvatarFallback>
+                  </Avatar>
+                  {/* Presence indicator for private rooms */}
+                  {!room.is_group && room.members?.some(m => m.id !== currentMember.id && onlineMembers.includes(m.id)) && (
+                    <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full animate-pulse shadow-sm" />
+                  )}
+                </div>
                 <div className="flex-1 text-left">
                   <p className="font-bold text-navy text-sm truncate">
                     {room.name || "Conversation privée"}
@@ -103,6 +197,11 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
                     {format(new Date(room.last_message_at), 'HH:mm', { locale: fr })}
                   </p>
                 </div>
+                {room.unread_count > 0 && (
+                  <Badge className="bg-sky-600 text-white rounded-full h-5 min-w-[20px] flex items-center justify-center text-[10px] font-black border-none shadow-lg">
+                    {room.unread_count}
+                  </Badge>
+                )}
               </button>
             ))}
           </div>
@@ -123,7 +222,21 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
                 </Avatar>
                 <div>
                   <h3 className="font-bold text-navy leading-none">{activeRoom?.name || "Conversation"}</h3>
-                  <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mt-1">En ligne</p>
+                  {activeRoom && Object.entries(typingMembers).some(([id, isTyping]) => 
+                    isTyping && activeRoom.members?.some(m => m.id === id)
+                  ) ? (
+                    <p className="text-[10px] text-sky-500 font-bold italic mt-1 animate-bounce">En train d'écrire...</p>
+                  ) : (
+                    <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${
+                      !activeRoom?.is_group && activeRoom?.members?.some(m => m.id !== currentMember.id && onlineMembers.includes(m.id))
+                        ? "text-emerald-500" 
+                        : "text-navy/20"
+                    }`}>
+                      {!activeRoom?.is_group && activeRoom?.members?.some(m => m.id !== currentMember.id && onlineMembers.includes(m.id))
+                        ? "En ligne" 
+                        : "Hors ligne"}
+                    </p>
+                  )}
                 </div>
               </div>
               <Button variant="ghost" size="icon" className="rounded-xl text-navy/30 hover:text-navy hover:bg-sky-50">
@@ -199,7 +312,7 @@ export default function MessagingCenter({ currentMember }: MessagingCenterProps)
                 
                 <Input 
                   value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
+                  onChange={(e) => handleInputChange(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                   placeholder="Écrivez votre message..." 
                   className="border-none bg-transparent shadow-none focus-visible:ring-0 text-navy font-medium placeholder:text-navy/20"

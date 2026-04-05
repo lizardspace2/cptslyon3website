@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth, type Member } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
 
 const titles = ["Dr.", "Pr.", "Mme.", "M.", "Mlle.", "Me."];
 
@@ -336,6 +337,30 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
     },
   });
 
+  const { data: totalUnread } = useQuery({
+    queryKey: ["total_unread", member.id],
+    queryFn: async () => {
+      const { data: memberships } = await supabase
+        .from('messaging_room_members')
+        .select('room_id, last_read_at')
+        .eq('member_id', member.id);
+      
+      if (!memberships || memberships.length === 0) return 0;
+
+      let total = 0;
+      for (const m of memberships) {
+        const { count } = await supabase
+          .from('messaging_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('room_id', m.room_id)
+          .gt('created_at', m.last_read_at);
+        total += (count || 0);
+      }
+      return total;
+    },
+    refetchInterval: 10000,
+  });
+
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
@@ -382,9 +407,16 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
                   <div className="sticky top-32 space-y-4">
                     <TabsList className="flex flex-col h-auto bg-white/40 backdrop-blur-3xl p-4 rounded-[3rem] border border-white/50 shadow-3xl shadow-navy/[0.02] gap-3 w-full">
                       {sidebarItems.map((tab) => (
-                        <TabsTrigger key={tab.value} value={tab.value} className="w-full flex items-center justify-start gap-4 px-6 py-4 rounded-[2rem] text-navy/40 data-[state=active]:bg-navy data-[state=active]:text-white data-[state=active]:shadow-2xl transition-all font-black text-xs uppercase tracking-widest">
-                          <tab.icon className="w-5 h-5" />
-                          {tab.label}
+                        <TabsTrigger key={tab.value} value={tab.value} className="w-full flex items-center justify-between gap-4 px-6 py-4 rounded-[2rem] text-navy/40 data-[state=active]:bg-navy data-[state=active]:text-white data-[state=active]:shadow-2xl transition-all font-black text-xs uppercase tracking-widest">
+                          <div className="flex items-center gap-4">
+                            <tab.icon className="w-5 h-5" />
+                            {tab.label}
+                          </div>
+                          {tab.value === "messaging" && totalUnread && totalUnread > 0 ? (
+                            <Badge className="bg-sky-600 text-white rounded-full h-5 min-w-[20px] flex items-center justify-center text-[9px] font-black border-none shadow-lg">
+                              {totalUnread}
+                            </Badge>
+                          ) : null}
                         </TabsTrigger>
                       ))}
                     </TabsList>

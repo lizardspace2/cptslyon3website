@@ -29,6 +29,7 @@ export function useWorkspace(memberId: string | undefined) {
       .from('workspace_posts')
       .select('*, author:members(*)')
       .eq('group_id', groupId)
+      .order('is_pinned', { ascending: false }) // Pinned first
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -75,7 +76,7 @@ export function useWorkspace(memberId: string | undefined) {
     if (error) {
       toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de publier le message.' });
     } else {
-      fetchPosts(activeGroupId); // Refresh
+      fetchPosts(activeGroupId);
     }
   };
 
@@ -94,6 +95,22 @@ export function useWorkspace(memberId: string | undefined) {
     }
   };
 
+  const togglePinPost = async (postId: string, isPinned: boolean) => {
+    const { error } = await supabase
+      .from('workspace_posts')
+      .update({ 
+        is_pinned: !isPinned,
+        pinned_at: !isPinned ? new Date().toISOString() : null
+      })
+      .eq('id', postId);
+
+    if (error) {
+      toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de modifier l\'épinglage.' });
+    } else if (activeGroupId) {
+      fetchPosts(activeGroupId); // Refresh UI
+    }
+  };
+
   return {
     groups,
     posts,
@@ -103,6 +120,7 @@ export function useWorkspace(memberId: string | undefined) {
     createGroup,
     createPost,
     deletePost,
+    togglePinPost,
     refreshGroups: fetchGroups,
   };
 }

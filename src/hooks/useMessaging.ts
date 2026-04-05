@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { MessagingRoom, MessagingMessage } from '@/types/messaging';
 import { useToast } from '@/hooks/use-toast';
@@ -8,11 +8,15 @@ export function useMessaging(memberId: string | undefined) {
   const [messages, setMessages] = useState<MessagingMessage[]>([]);
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [onlineMembers, setOnlineMembers] = useState<string[]>([]);
+  const [typingMembers, setTypingMembers] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
+  
+  const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   const fetchRooms = useCallback(async () => {
     if (!memberId) return;
-    const { data, error } = await supabase
+    const { data: roomsData, error } = await supabase
       .from('messaging_rooms')
       .select('*, messaging_room_members!inner(*), members!messaging_room_members(*)')
       .eq('messaging_room_members.member_id', memberId)
@@ -22,8 +26,33 @@ export function useMessaging(memberId: string | undefined) {
       console.error('Error fetching rooms:', error);
       return;
     }
-    setRooms(data as any);
+
+    const processedRooms = await Promise.all((roomsData as any[]).map(async (room) => {
+      const myMembership = room.messaging_room_members.find((m: any) => m.member_id === memberId);
+      const { count } = await supabase
+        .from('messaging_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('room_id', room.id)
+        .gt('created_at', myMembership.last_read_at);
+      
+      return { ...room, unread_count: count || 0 };
+    }));
+
+    setRooms(processedRooms);
     setLoading(false);
+  }, [memberId]);
+
+  const markAsRead = useCallback(async (roomId: string) => {
+    if (!memberId) return;
+    const { error } = await supabase
+      .from('messaging_room_members')
+      .update({ last_read_at: new Date().toISOString() })
+      .eq('room_id', roomId)
+      .eq('member_id', memberId);
+
+    if (!error) {
+      setRooms(prev => prev.map(r => r.id === roomId ? { ...r, unread_count: 0 } : r));
+    }
   }, [memberId]);
 
   const fetchMessages = useCallback(async (roomId: string) => {
@@ -41,15 +70,46 @@ export function useMessaging(memberId: string | undefined) {
     setMessages(data as any);
   }, []);
 
-  // Realtime subscription
+  // Realtime subscription (Presence, Broadcast, Postgres Changes)
   useEffect(() => {
-    if (!activeRoomId) return;
+    if (!memberId) return;
 
-    fetchMessages(activeRoomId);
+    const channel = supabase.channel(activeRoomId ? `room:${activeRoomId}` : 'global_presence', {
+      config: {
+        presence: { key: memberId },
+      },
+    });
 
-    const subscription = supabase
-      .channel(`room:${activeRoomId}`)
-      .on(
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        setOnlineMembers(Object.keys(state));
+      })
+      .on('presence', { event: 'join' }, ({ key }) => {
+        setOnlineMembers((prev) => [...new Set([...prev, key])]);
+      })
+      .on('presence', { event: 'leave' }, ({ key }) => {
+        setOnlineMembers((prev) => prev.filter((id) => id !== key));
+      })
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        const { memberId: typingId, isTyping } = payload;
+        if (typingId === memberId) return;
+
+        setTypingMembers((prev) => ({ ...prev, [typingId]: isTyping }));
+        
+        if (isTyping) {
+          if (typingTimeoutRef.current[typingId]) clearTimeout(typingTimeoutRef.current[typingId]);
+          typingTimeoutRef.current[typingId] = setTimeout(() => {
+            setTypingMembers((prev) => ({ ...prev, [typingId]: false }));
+          }, 3000);
+        }
+      });
+
+    if (activeRoomId) {
+      fetchMessages(activeRoomId);
+      markAsRead(activeRoomId);
+
+      channel.on(
         'postgres_changes',
         {
           event: '*',
@@ -60,7 +120,7 @@ export function useMessaging(memberId: string | undefined) {
         (payload) => {
           if (payload.eventType === 'INSERT') {
             const newMessage = payload.new as MessagingMessage;
-            // Fetch the sender profile for the new message
+            if (activeRoomId === newMessage.room_id) markAsRead(activeRoomId);
             supabase
               .from('members')
               .select('*')
@@ -73,13 +133,28 @@ export function useMessaging(memberId: string | undefined) {
             setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
           }
         }
-      )
-      .subscribe();
+      );
+    }
+
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({ online_at: new Date().toISOString() });
+      }
+    });
 
     return () => {
-      supabase.removeChannel(subscription);
+      supabase.removeChannel(channel);
     };
-  }, [activeRoomId, fetchMessages]);
+  }, [activeRoomId, memberId, fetchMessages, markAsRead]);
+
+  const sendTyping = (isTyping: boolean) => {
+    if (!activeRoomId || !memberId) return;
+    supabase.channel(`room:${activeRoomId}`).send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { memberId, isTyping },
+    });
+  };
 
   useEffect(() => {
     fetchRooms();
@@ -97,7 +172,6 @@ export function useMessaging(memberId: string | undefined) {
     if (error) {
       toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible d\'envoyer le message.' });
     } else {
-      // Update the room's last_message_at
       await supabase
         .from('messaging_rooms')
         .update({ last_message_at: new Date().toISOString() })
@@ -107,12 +181,11 @@ export function useMessaging(memberId: string | undefined) {
 
   const deleteMessage = async (messageId: string) => {
     if (!memberId) return;
-    
     const { error } = await supabase
       .from('messaging_messages')
       .delete()
       .eq('id', messageId)
-      .eq('sender_id', memberId); // Only the sender can delete
+      .eq('sender_id', memberId);
 
     if (error) {
       toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de supprimer le message.' });
@@ -122,17 +195,8 @@ export function useMessaging(memberId: string | undefined) {
   const createDirectMessage = async (targetMemberId: string) => {
     if (!memberId) return;
 
-    // Check if room already exists
-    const { data: myRooms } = await supabase
-      .from('messaging_room_members')
-      .select('room_id')
-      .eq('member_id', memberId);
-
-    const { data: targetRooms } = await supabase
-      .from('messaging_room_members')
-      .select('room_id')
-      .eq('member_id', targetMemberId);
-
+    const { data: myRooms } = await supabase.from('messaging_room_members').select('room_id').eq('member_id', memberId);
+    const { data: targetRooms } = await supabase.from('messaging_room_members').select('room_id').eq('member_id', targetMemberId);
     const commonRooms = myRooms?.filter(mr => targetRooms?.some(tr => tr.room_id === mr.room_id));
 
     if (commonRooms && commonRooms.length > 0) {
@@ -140,12 +204,7 @@ export function useMessaging(memberId: string | undefined) {
       return;
     }
     
-    const { data: room, error: roomError } = await supabase
-      .from('messaging_rooms')
-      .insert({ is_group: false })
-      .select()
-      .single();
-
+    const { data: room, error: roomError } = await supabase.from('messaging_rooms').insert({ is_group: false }).select().single();
     if (roomError) throw roomError;
 
     await supabase.from('messaging_room_members').insert([
@@ -163,9 +222,12 @@ export function useMessaging(memberId: string | undefined) {
     activeRoomId,
     setActiveRoomId,
     loading,
+    onlineMembers,
+    typingMembers,
     sendMessage,
     deleteMessage,
     createDirectMessage,
+    sendTyping,
     refreshRooms: fetchRooms,
   };
 }

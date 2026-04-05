@@ -4,7 +4,7 @@ import { Member } from '@/hooks/useAuth';
 import { WorkspaceGroup, WorkspacePost } from '@/types/messaging';
 import { 
   Plus, Users, MessageCircle, Heart, Share2, 
-  Trash2, Search, Filter, Hash, Star, LayoutGrid, Calendar 
+  Trash2, Search, Filter, Hash, Star, LayoutGrid, Calendar, Pin, PinOff 
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,8 @@ export default function WorkspaceGroups({ currentMember }: WorkspaceGroupsProps)
     setActiveGroupId, 
     loading, 
     createPost, 
-    deletePost 
+    deletePost,
+    togglePinPost 
   } = useWorkspace(currentMember.id);
   
   const [postInput, setPostInput] = useState('');
@@ -158,11 +159,20 @@ export default function WorkspaceGroups({ currentMember }: WorkspaceGroupsProps)
               </CardContent>
             </Card>
 
-            {/* Posts List */}
-            <div className="space-y-8">
-              {posts.map((post) => (
-                <Card key={post.id} className="rounded-[3rem] border border-navy/5 shadow-2xl bg-white overflow-hidden transition-all hover:shadow-sky-600/10 hover:border-sky-600/20 group/post relative">
-                  <CardContent className="p-8 md:p-10">
+             {/* Posts List */}
+             <div className="space-y-8">
+               {posts.map((post) => (
+                 <Card key={post.id} className={`rounded-[3rem] border shadow-2xl overflow-hidden transition-all hover:shadow-sky-600/10 hover:border-sky-600/20 group/post relative ${
+                   post.is_pinned ? 'bg-sky-50/40 border-sky-600/30 ring-1 ring-sky-600/10' : 'bg-white border-navy/5'
+                 }`}>
+                   {post.is_pinned && (
+                     <div className="absolute top-6 right-10 flex items-center gap-2">
+                       <Badge className="bg-sky-600 text-white border-none text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg">
+                         Épinglé
+                       </Badge>
+                     </div>
+                   )}
+                   <CardContent className="p-8 md:p-10">
                     <div className="flex items-start justify-between gap-6 mb-8">
                       <div className="flex items-center gap-4">
                         <Avatar className="w-14 h-14 rounded-2xl shadow-lg border-2 border-sky-50">
@@ -182,16 +192,28 @@ export default function WorkspaceGroups({ currentMember }: WorkspaceGroupsProps)
                           </div>
                         </div>
                       </div>
-                      {post.author_id === currentMember.id && (
+                      <div className="flex items-center gap-2 opacity-0 group-hover/post:opacity-100 transition-all">
                         <Button 
-                          onClick={() => deletePost(post.id)}
+                          onClick={() => togglePinPost(post.id, !!post.is_pinned)}
                           variant="ghost" 
                           size="icon" 
-                          className="rounded-xl text-navy/10 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover/post:opacity-100"
+                          className={`rounded-xl transition-all ${
+                            post.is_pinned ? 'text-sky-600 bg-sky-100' : 'text-navy/10 hover:text-sky-600 hover:bg-sky-50'
+                          }`}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {post.is_pinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
                         </Button>
-                      )}
+                        {post.author_id === currentMember.id && (
+                          <Button 
+                            onClick={() => deletePost(post.id)}
+                            variant="ghost" 
+                            size="icon" 
+                            className="rounded-xl text-navy/10 hover:text-red-500 hover:bg-red-50 transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     
                     <div className="text-navy text-lg leading-relaxed font-normal p-6 bg-sky-50/30 rounded-[2rem] border border-sky-600/5 mb-8">
