@@ -5,10 +5,11 @@ import { ChevronRight } from "lucide-react";
 interface PageBannerProps {
   title: string;
   subtitle?: string;
+  topLabel?: string;
   breadcrumb?: { label: string; href: string }[];
 }
 
-const PageBanner = ({ title, subtitle, breadcrumb }: PageBannerProps) => {
+const PageBanner = ({ title, subtitle, topLabel = "CPTS Lyon 3 • Espace Information", breadcrumb }: PageBannerProps) => {
   return (
     <section className="relative py-10 bg-navy text-navy-foreground overflow-hidden border-b border-white/5">
       {/* Premium Decorative elements */}
@@ -24,7 +25,7 @@ const PageBanner = ({ title, subtitle, breadcrumb }: PageBannerProps) => {
           className="inline-block px-3 py-1 mb-4 rounded-full bg-white/5 border border-white/10 backdrop-blur-md"
         >
           <span className="text-[9px] font-black uppercase tracking-[0.3em] text-sky-400">
-            CPTS Lyon 3 • Espace Information
+            {topLabel}
           </span>
         </motion.div>
 

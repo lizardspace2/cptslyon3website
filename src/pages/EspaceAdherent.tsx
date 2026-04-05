@@ -158,7 +158,11 @@ const PublicPage = ({ onSignUp, onSignIn }: { onSignUp: any; onSignIn: any }) =>
     <div className="min-h-screen bg-background text-base">
       <Header />
       <main>
-        <PageBanner title="Espace Adhérent" subtitle="Rejoignez la communauté des professionnels de santé de Lyon 3 et participez à la coordination des soins." />
+        <PageBanner 
+          topLabel="CPTS Lyon 3 • Espace Adhérent"
+          title="Espace Adhérent" 
+          subtitle="Rejoignez la communauté des professionnels de santé de Lyon 3 et participez à la coordination des soins." 
+        />
 
         {/* AUTH SECTION */}
         <section className="py-20 relative overflow-hidden">
@@ -269,7 +273,11 @@ const PendingScreen = ({ member, isPending, onSignOut }: { member: Member; isPen
   <div className="min-h-screen bg-background text-base">
     <Header />
     <main>
-      <PageBanner title="Espace Adhérent" subtitle="Votre demande d'adhésion" />
+      <PageBanner 
+        topLabel="CPTS Lyon 3 • Espace Adhérent"
+        title="Espace Adhérent" 
+        subtitle="Votre demande d'adhésion" 
+      />
       <section className="py-24">
         <div className="container max-w-2xl">
           <Card className="rounded-[3rem] border border-navy/5 shadow-3xl bg-white overflow-hidden">
@@ -464,7 +472,11 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
     <div className="min-h-screen bg-background text-base">
       <Header />
       <main>
-        <PageBanner title={`Bienvenue, ${member.first_name || "Adhérent"}`} subtitle="Votre espace personnel CPTS Lyon 3" />
+        <PageBanner 
+          topLabel="CPTS Lyon 3 • Espace Adhérent"
+          title={`Bienvenue, ${member.first_name || "Adhérent"}`} 
+          subtitle="Votre espace personnel CPTS Lyon 3" 
+        />
         <section className="py-16">
           <div className="container max-w-7xl">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
