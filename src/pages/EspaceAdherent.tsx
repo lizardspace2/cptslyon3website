@@ -6,8 +6,10 @@ import { motion } from "framer-motion";
 import {
   Shield, Users, Heart, CheckCircle2, ArrowRight, Mail, Phone, HelpCircle,
   Sparkles, LogOut, Loader2, User, BookOpen, Newspaper, FileText,
-  Eye, EyeOff, Clock, XCircle, Save, Home
+  Eye, EyeOff, Clock, XCircle, Save, Home, MessageSquare, LayoutDashboard
 } from "lucide-react";
+import MessagingCenter from "@/components/messaging/MessagingCenter";
+import WorkspaceGroups from "@/components/messaging/WorkspaceGroups";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -357,6 +359,8 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
 
   const sidebarItems = [
     { value: "home", label: "Accueil", icon: Home },
+    { value: "messaging", label: "Messages", icon: MessageSquare },
+    { value: "workspace", label: "Groupes", icon: LayoutDashboard },
     { value: "profile", label: "Mon profil", icon: User },
     { value: "resources", label: "Ressources", icon: FileText },
     { value: "news", label: "Actualités", icon: Newspaper },
@@ -405,6 +409,16 @@ const MemberDashboard = ({ member, onSignOut, onUpdateProfile }: { member: Membe
                       </div>
 
                     </Card>
+                  </TabsContent>
+
+                  {/* MESSAGING */}
+                  <TabsContent value="messaging" className="mt-0">
+                    <MessagingCenter currentMember={member} />
+                  </TabsContent>
+
+                  {/* WORKSPACE */}
+                  <TabsContent value="workspace" className="mt-0">
+                    <WorkspaceGroups currentMember={member} />
                   </TabsContent>
 
                   {/* PROFILE */}
