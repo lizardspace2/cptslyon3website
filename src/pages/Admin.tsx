@@ -344,14 +344,22 @@ const Admin = () => {
 
   const memberStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("members").update({ status }).eq("id", id);
+      console.log(`[Admin] Updating member status: id=${id}, status=${status}`);
+      const { data, error, status: httpStatus } = await supabase.from("members").update({ status }).eq("id", id).select();
+      console.log(`[Admin] Supabase response (members):`, { data, error, httpStatus });
       if (error) throw error;
+      return data;
     },
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      console.log("[Admin] Member status update success, invalidating admin_members...");
       await queryClient.invalidateQueries({ queryKey: ["admin_members"] });
+      console.log("[Admin] Invalidation complete.");
       toast({ title: "Statut mis à jour", description: "Le statut de l'adhérent a été modifié.", className: "bg-emerald-500 text-white rounded-3xl" });
     },
-    onError: (error) => toast({ variant: "destructive", title: "Erreur", description: error.message })
+    onError: (error) => {
+      console.error("[Admin] Member status update error:", error);
+      toast({ variant: "destructive", title: "Erreur", description: error.message });
+    }
   });
 
   useEffect(() => {
@@ -366,16 +374,20 @@ const Admin = () => {
   // --- Mutations ---
   const proMutation = useMutation({
     mutationFn: async ({ id, data }: { id?: string; data: any }) => {
-      if (id) {
-        const { error } = await supabase.from("professionals").update(data).eq("id", id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("professionals").insert([data]);
-        if (error) throw error;
-      }
+      console.log(`[Admin] Pro mutation: id=${id || 'NEW'}`, data);
+      const query = id 
+        ? supabase.from("professionals").update(data).eq("id", id) 
+        : supabase.from("professionals").insert([data]);
+      
+      const { data: resData, error, status: httpStatus } = await query.select();
+      console.log(`[Admin] Supabase response (professionals):`, { resData, error, httpStatus });
+      if (error) throw error;
+      return resData;
     },
-    onSuccess: async (_, variables) => {
+    onSuccess: async (data, variables) => {
+      console.log("[Admin] Pro mutation success, invalidating admin_pros...");
       await queryClient.invalidateQueries({ queryKey: ["admin_pros"] });
+      console.log("[Admin] Invalidation complete.");
       toast({ 
         title: variables.id ? "Mis à jour" : "Ajouté", 
         description: `Le professionnel a été ${variables.id ? "modifié" : "ajouté"} avec succès.`,
@@ -385,7 +397,10 @@ const Admin = () => {
       setEditingPro(null);
       setNewPro({ title: "Dr.", first_name: "", last_name: "", specialty: "", public_phone: "", private_phone: "", email: "", address: "", photo_url: "" });
     },
-    onError: (error) => toast({ variant: "destructive", title: "Erreur", description: error.message })
+    onError: (error) => {
+      console.error("[Admin] Pro mutation error:", error);
+      toast({ variant: "destructive", title: "Erreur", description: error.message });
+    }
   });
 
   // Bulk Professionals Mutation
@@ -406,16 +421,20 @@ const Admin = () => {
   // News Mutation
   const newsMutation = useMutation({
     mutationFn: async ({ id, data }: { id?: string; data: any }) => {
-      if (id) {
-        const { error } = await supabase.from("news").update(data).eq("id", id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("news").insert([{ ...data, published_at: new Date().toISOString() }]);
-        if (error) throw error;
-      }
+      console.log(`[Admin] News mutation: id=${id || 'NEW'}`, data);
+      const query = id 
+        ? supabase.from("news").update(data).eq("id", id) 
+        : supabase.from("news").insert([{ ...data, published_at: new Date().toISOString() }]);
+      
+      const { data: resData, error, status: httpStatus } = await query.select();
+      console.log(`[Admin] Supabase response (news):`, { resData, error, httpStatus });
+      if (error) throw error;
+      return resData;
     },
-    onSuccess: async (_, variables) => {
+    onSuccess: async (data, variables) => {
+      console.log("[Admin] News mutation success, invalidating admin_news...");
       await queryClient.invalidateQueries({ queryKey: ["admin_news"] });
+      console.log("[Admin] Invalidation complete.");
       toast({ 
         title: variables.id ? "Mis à jour" : "Ajouté", 
         description: `L'article a été ${variables.id ? "modifié" : "ajouté"} avec succès.`,
@@ -425,22 +444,29 @@ const Admin = () => {
       setEditingNews(null);
       setNewNews({ title: "", excerpt: "", category: "Santé", image_url: "" });
     },
-    onError: (error) => toast({ variant: "destructive", title: "Erreur", description: error.message })
+    onError: (error) => {
+      console.error("[Admin] News mutation error:", error);
+      toast({ variant: "destructive", title: "Erreur", description: error.message });
+    }
   });
 
   // Resources Mutation
   const resourceMutation = useMutation({
     mutationFn: async ({ id, data }: { id?: string; data: any }) => {
-      if (id) {
-        const { error } = await supabase.from("resources").update(data).eq("id", id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("resources").insert([data]);
-        if (error) throw error;
-      }
+      console.log(`[Admin] Resource mutation: id=${id || 'NEW'}`, data);
+      const query = id 
+        ? supabase.from("resources").update(data).eq("id", id) 
+        : supabase.from("resources").insert([data]);
+      
+      const { data: resData, error, status: httpStatus } = await query.select();
+      console.log(`[Admin] Supabase response (resources):`, { resData, error, httpStatus });
+      if (error) throw error;
+      return resData;
     },
-    onSuccess: async (_, variables) => {
+    onSuccess: async (data, variables) => {
+      console.log("[Admin] Resource mutation success, invalidating admin_resources...");
       await queryClient.invalidateQueries({ queryKey: ["admin_resources"] });
+      console.log("[Admin] Invalidation complete.");
       toast({ 
         title: variables.id ? "Mis à jour" : "Ajouté", 
         description: `La ressource a été ${variables.id ? "modifiée" : "ajoutée"} avec succès.`,
@@ -450,7 +476,10 @@ const Admin = () => {
       setEditingResource(null);
       setNewResource({ title: "", description: "", type: "lien", url: "" });
     },
-    onError: (error) => toast({ variant: "destructive", title: "Erreur", description: error.message })
+    onError: (error) => {
+      console.error("[Admin] Resource mutation error:", error);
+      toast({ variant: "destructive", title: "Erreur", description: error.message });
+    }
   });
 
   const updateSettingMutation = useMutation({
@@ -469,10 +498,14 @@ const Admin = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async ({ table, id }: { table: string, id: string }) => {
-      const { error } = await supabase.from(table).delete().eq("id", id);
+      console.log(`[Admin] Deleting from ${table}: id=${id}`);
+      const { data, error, status: httpStatus } = await supabase.from(table).delete().eq("id", id).select();
+      console.log(`[Admin] Supabase response (delete):`, { data, error, httpStatus });
       if (error) throw error;
+      return data;
     },
-    onSuccess: async (_, variables) => {
+    onSuccess: async (data, variables) => {
+      console.log(`[Admin] Delete success from ${variables.table}, invalidating...`);
       // Mapping correct des tables vers les clés de requête admin
       const tableToQueryKey: Record<string, string> = {
         news: "admin_news",
@@ -485,6 +518,7 @@ const Admin = () => {
       
       const queryKey = tableToQueryKey[variables.table] || `admin_${variables.table}`;
       await queryClient.invalidateQueries({ queryKey: [queryKey] });
+      console.log(`[Admin] Invalidation for ${queryKey} complete.`);
       
       toast({ 
         title: "Supprimé", 
@@ -493,6 +527,7 @@ const Admin = () => {
       });
     },
     onError: (error) => {
+      console.error("[Admin] Delete mutation error:", error);
       toast({ variant: "destructive", title: "Erreur", description: error.message });
     }
   });
