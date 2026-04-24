@@ -347,9 +347,9 @@ const Admin = () => {
       const { error } = await supabase.from("members").update({ status }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin_members"] });
-      toast({ title: "Statut mis à jour", description: "Le statut de l'adhérent a été modifié." });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin_members"] });
+      toast({ title: "Statut mis à jour", description: "Le statut de l'adhérent a été modifié.", className: "bg-emerald-500 text-white rounded-3xl" });
     },
     onError: (error) => toast({ variant: "destructive", title: "Erreur", description: error.message })
   });
@@ -365,18 +365,22 @@ const Admin = () => {
 
   // --- Mutations ---
   const proMutation = useMutation({
-    mutationFn: async (pro: any) => {
-      if (editingPro) {
-        const { error } = await supabase.from("professionals").update(pro).eq("id", editingPro.id);
+    mutationFn: async ({ id, data }: { id?: string; data: any }) => {
+      if (id) {
+        const { error } = await supabase.from("professionals").update(data).eq("id", id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("professionals").insert([pro]);
+        const { error } = await supabase.from("professionals").insert([data]);
         if (error) throw error;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin_pros"] });
-      toast({ title: editingPro ? "Mis à jour" : "Ajouté", description: `Le professionnel a été ${editingPro ? "modifié" : "ajouté"} avec succès.` });
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["admin_pros"] });
+      toast({ 
+        title: variables.id ? "Mis à jour" : "Ajouté", 
+        description: `Le professionnel a été ${variables.id ? "modifié" : "ajouté"} avec succès.`,
+        className: "bg-emerald-500 text-white rounded-3xl"
+      });
       setIsAddProOpen(false);
       setEditingPro(null);
       setNewPro({ title: "Dr.", first_name: "", last_name: "", specialty: "", public_phone: "", private_phone: "", email: "", address: "", photo_url: "" });
@@ -390,9 +394,9 @@ const Admin = () => {
       const { error } = await supabase.from("professionals").insert(pros);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin_pros"] });
-      toast({ title: "Import réussi", description: `${previewData.length} professionnels ont été importés.` });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin_pros"] });
+      toast({ title: "Import réussi", description: `${previewData.length} professionnels ont été importés.`, className: "bg-emerald-500 text-white rounded-3xl" });
       setIsImportDialogOpen(false);
       setPreviewData([]);
     },
@@ -401,18 +405,22 @@ const Admin = () => {
 
   // News Mutation
   const newsMutation = useMutation({
-    mutationFn: async (article: any) => {
-      if (editingNews) {
-        const { error } = await supabase.from("news").update(article).eq("id", editingNews.id);
+    mutationFn: async ({ id, data }: { id?: string; data: any }) => {
+      if (id) {
+        const { error } = await supabase.from("news").update(data).eq("id", id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("news").insert([{ ...article, published_at: new Date().toISOString() }]);
+        const { error } = await supabase.from("news").insert([{ ...data, published_at: new Date().toISOString() }]);
         if (error) throw error;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin_news"] });
-      toast({ title: editingNews ? "Mis à jour" : "Ajouté", description: `L'article a été ${editingNews ? "modifié" : "ajouté"} avec succès.` });
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["admin_news"] });
+      toast({ 
+        title: variables.id ? "Mis à jour" : "Ajouté", 
+        description: `L'article a été ${variables.id ? "modifié" : "ajouté"} avec succès.`,
+        className: "bg-emerald-500 text-white rounded-3xl"
+      });
       setIsAddNewsOpen(false);
       setEditingNews(null);
       setNewNews({ title: "", excerpt: "", category: "Santé", image_url: "" });
@@ -422,18 +430,22 @@ const Admin = () => {
 
   // Resources Mutation
   const resourceMutation = useMutation({
-    mutationFn: async (resource: any) => {
-      if (editingResource) {
-        const { error } = await supabase.from("resources").update(resource).eq("id", editingResource.id);
+    mutationFn: async ({ id, data }: { id?: string; data: any }) => {
+      if (id) {
+        const { error } = await supabase.from("resources").update(data).eq("id", id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("resources").insert([resource]);
+        const { error } = await supabase.from("resources").insert([data]);
         if (error) throw error;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin_resources"] });
-      toast({ title: editingResource ? "Mis à jour" : "Ajouté", description: `La ressource a été ${editingResource ? "modifiée" : "ajoutée"} avec succès.` });
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["admin_resources"] });
+      toast({ 
+        title: variables.id ? "Mis à jour" : "Ajouté", 
+        description: `La ressource a été ${variables.id ? "modifiée" : "ajoutée"} avec succès.`,
+        className: "bg-emerald-500 text-white rounded-3xl"
+      });
       setIsAddResourceOpen(false);
       setEditingResource(null);
       setNewResource({ title: "", description: "", type: "lien", url: "" });
@@ -446,9 +458,9 @@ const Admin = () => {
       const { error } = await supabase.from("site_settings").update({ value }).eq("key", key);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin_settings"] });
-      toast({ title: "Enregistré", description: "Les paramètres ont été mis à jour." });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin_settings"] });
+      toast({ title: "Enregistré", description: "Les paramètres ont été mis à jour.", className: "bg-emerald-500 text-white rounded-3xl" });
     },
     onError: (error) => {
       toast({ variant: "destructive", title: "Erreur", description: error.message });
@@ -460,9 +472,25 @@ const Admin = () => {
       const { error } = await supabase.from(table).delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: [`admin_${variables.table === 'contacts' ? 'messages' : (variables.table === 'news' ? 'news' : (variables.table === 'professionals' ? 'pros' : 'resources'))}`] });
-      toast({ title: "Supprimé", description: "L'élément a été supprimé avec succès." });
+    onSuccess: async (_, variables) => {
+      // Mapping correct des tables vers les clés de requête admin
+      const tableToQueryKey: Record<string, string> = {
+        news: "admin_news",
+        professionals: "admin_pros",
+        resources: "admin_resources",
+        contacts: "admin_messages",
+        replacements: "admin_announcements",
+        members: "admin_members"
+      };
+      
+      const queryKey = tableToQueryKey[variables.table] || `admin_${variables.table}`;
+      await queryClient.invalidateQueries({ queryKey: [queryKey] });
+      
+      toast({ 
+        title: "Supprimé", 
+        description: "L'élément a été supprimé avec succès.",
+        className: "bg-emerald-500 text-white rounded-3xl"
+      });
     },
     onError: (error) => {
       toast({ variant: "destructive", title: "Erreur", description: error.message });
@@ -664,7 +692,7 @@ const Admin = () => {
                         </div>
                         <DialogFooter className="gap-4">
                            <Button 
-                             onClick={() => newsMutation.mutate(newNews)} 
+                             onClick={() => newsMutation.mutate({ id: editingNews?.id, data: newNews })} 
                              disabled={newsMutation.isPending || isUploading}
                              className="h-16 rounded-2xl px-12 bg-navy text-white font-bold disabled:opacity-50 transition-all hover:bg-sky-600"
                            >
@@ -942,7 +970,7 @@ const Admin = () => {
                             Annuler
                           </Button>
                           <Button 
-                            onClick={() => proMutation.mutate(newPro)}
+                            onClick={() => proMutation.mutate({ id: editingPro?.id, data: newPro })}
                             disabled={proMutation.isPending}
                             className="h-20 rounded-[2rem] px-16 bg-navy hover:bg-sky-600 text-white font-display font-bold text-xl shadow-3xl shadow-navy/20 transition-all flex items-center gap-6 active:scale-95"
                           >
@@ -1085,7 +1113,7 @@ const Admin = () => {
                         <DialogFooter className="gap-4">
                            <Button variant="ghost" onClick={() => setIsAddResourceOpen(false)} className="h-16 rounded-2xl px-10 font-bold">Annuler</Button>
                            <Button 
-                             onClick={() => resourceMutation.mutate(newResource)} 
+                             onClick={() => resourceMutation.mutate({ id: editingResource?.id, data: newResource })} 
                              disabled={resourceMutation.isPending}
                              className="h-16 rounded-2xl px-12 bg-navy text-white font-bold"
                            >
@@ -1166,7 +1194,10 @@ const Admin = () => {
                                    onClick={async () => {
                                      const { error } = await supabase.from("replacements").update({ status: 'active' }).eq("id", item.id);
                                      if (error) toast({ variant: "destructive", title: "Erreur", description: error.message });
-                                     else queryClient.invalidateQueries({ queryKey: ["admin_announcements"] });
+                                     else {
+                                       await queryClient.invalidateQueries({ queryKey: ["admin_announcements"] });
+                                       toast({ title: "Annonce activée", description: "L'annonce est maintenant visible publiquement.", className: "bg-emerald-500 text-white rounded-3xl" });
+                                     }
                                    }}
                                  >
                                     <CheckCircle2 className="w-6 h-6" />
